@@ -1,7 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { EventProject, Budget, Itinerary, Supplier } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined. Please set it in your environment variables.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export async function generateEventDraft(params: {
   country: string;
@@ -12,6 +23,7 @@ export async function generateEventDraft(params: {
   existingSuppliers: Supplier[];
   budgetLimit?: number;
 }) {
+  const ai = getAI();
   const model = "gemini-3-flash-preview";
   
   const budgetContext = params.budgetLimit 
@@ -127,6 +139,7 @@ export async function generateEventDraft(params: {
 }
 
 export async function parseInvoice(base64File: string, mimeType: string) {
+  const ai = getAI();
   const model = "gemini-3-flash-preview";
   
   const prompt = `
@@ -182,6 +195,7 @@ export async function parseInvoice(base64File: string, mimeType: string) {
 }
 
 export async function conductResearch(topic: string) {
+  const ai = getAI();
   const model = "gemini-3.1-pro-preview"; // Use Pro for deep research
   
   const prompt = `
@@ -250,6 +264,7 @@ export async function conductResearch(topic: string) {
 }
 
 export async function generateManagerSummary(activities: any[]) {
+  const ai = getAI();
   const model = "gemini-3-flash-preview";
   const prompt = `
     Analyze the following team activities from yesterday:
@@ -269,6 +284,7 @@ export async function generateManagerSummary(activities: any[]) {
 }
 
 export async function analyzePerformance(projects: any[], period: string) {
+  const ai = getAI();
   const model = "gemini-3.1-pro-preview";
   const prompt = `
     Analyze the event project data for the period: ${period}.
@@ -314,6 +330,7 @@ export async function analyzePerformance(projects: any[], period: string) {
 }
 
 export async function generateHandoverBriefing(project: EventProject) {
+  const ai = getAI();
   const model = "gemini-3-flash-preview"; 
   
   const prompt = `
@@ -371,6 +388,7 @@ export async function generateHandoverBriefing(project: EventProject) {
 }
 
 export async function generateSupplierAIInsight(supplier: Supplier) {
+  const ai = getAI();
   const model = "gemini-3-flash-preview";
   const prompt = `
     Analyze this supplier for an EPM:
@@ -393,6 +411,7 @@ export async function generateSupplierAIInsight(supplier: Supplier) {
 }
 
 export async function getKnowledgeAnswer(query: string, knowledge: any[], userRole: string) {
+  const ai = getAI();
   const model = "gemini-3.1-pro-preview";
   const prompt = `
     You are the Global EPM Advisor at Deriv.
@@ -418,6 +437,7 @@ export async function getKnowledgeAnswer(query: string, knowledge: any[], userRo
 }
 
 export async function generateDailyEPMDigest(projects: EventProject[], userRole: string, userName: string) {
+  const ai = getAI();
   const model = "gemini-3.1-pro-preview";
   const prompt = `
     Hello, you are an AI assistant for ${userName}, who is a ${userRole} at Deriv.
@@ -443,6 +463,7 @@ export async function generateDailyEPMDigest(projects: EventProject[], userRole:
 }
 
 export async function detectBudgetVariance(project: EventProject) {
+  const ai = getAI();
   const model = "gemini-3-flash-preview";
   if (!project.budget) return null;
 
@@ -469,6 +490,7 @@ export async function detectBudgetVariance(project: EventProject) {
 }
 
 export async function generateEPMTaskSummary(epmName: string, projects: EventProject[]) {
+  const ai = getAI();
   const model = "gemini-3.1-pro-preview";
   const epmProjects = projects.filter(p => p.epmName === epmName);
   

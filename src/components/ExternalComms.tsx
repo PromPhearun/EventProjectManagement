@@ -28,7 +28,13 @@ export function ExternalComms({ project, onUpdate }: ExternalCommsProps) {
   const [showAddContact, setShowAddContact] = useState(false);
   const [newContact, setNewContact] = useState({ name: '', email: '' });
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const getAI = () => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined. Please set it in your environment variables.");
+    }
+    return new GoogleGenAI({ apiKey });
+  };
 
   useEffect(() => {
     checkGoogleStatus();
@@ -92,6 +98,7 @@ export function ExternalComms({ project, onUpdate }: ExternalCommsProps) {
   const generateDraft = async () => {
     setIsGenerating(true);
     try {
+      const ai = getAI();
       const prompt = `
         Draft a professional business email from an Event Project Manager (EPM) at Deriv.
         
