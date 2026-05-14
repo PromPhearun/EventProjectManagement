@@ -94,7 +94,14 @@ export function HandoverHub() {
     });
 
     toast.success(`${reason === 'Return Handover' ? 'Return request' : 'Handover request'} sent to ${toEpm}`);
-    setFormData({ projectId: '', toEpm: '', reason: 'On Leave', briefing: '' });
+    setFormData({ 
+      projectId: '', 
+      toEpm: '', 
+      reason: 'On Leave', 
+      briefing: '',
+      shortBriefing: '',
+      visualData: undefined
+    });
     refresh();
   };
 

@@ -8,14 +8,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+export default app; // Export for Vercel
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 app.use(cookieSession({
   name: 'session',
   keys: [process.env.SESSION_SECRET || 'epm-secret-key'],
   maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  secure: true,
+  secure: process.env.NODE_ENV === "production",
   sameSite: 'none'
 }));
 
@@ -127,9 +128,12 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  // Only listen if not in a serverless environment (Vercel)
+  if (process.env.VERCEL !== '1') {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();
