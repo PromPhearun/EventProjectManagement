@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { db } from './services/db';
 import { EventProject, Supplier, UserRole, User } from './types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -14,7 +15,7 @@ import { FeedbackHub } from './components/FeedbackHub';
 import { HandoverHub } from './components/HandoverHub';
 import { KnowledgeHub } from './components/KnowledgeHub';
 import { LoginPage } from './components/LoginPage';
-import { User as UserIcon, LogOut, Settings, Bell, Palette, Globe, Check } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Bell, Palette, Globe, Check, Moon, Sun, Monitor } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './components/ui/dialog';
 import { Switch } from './components/ui/switch';
@@ -26,6 +27,7 @@ import { Button } from './components/ui/button';
 import { Briefcase, Plus, Users, Calendar, Lightbulb, MessageSquare, ClipboardCheck, LayoutDashboard, Search, Command, Shield, ArrowRightLeft, UserCircle } from 'lucide-react';
 
 export default function App() {
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [projects, setProjects] = useState<EventProject[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -106,16 +108,16 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen text-[#1A1A1A] font-sans selection:bg-amber-100 ${currentUser.settings?.theme === 'glass' ? 'bg-gradient-to-br from-slate-50 to-blue-50' : 'bg-[#F8F9FA]'}`}>
-      <header className="border-b border-[#000]/5 bg-white sticky top-0 z-50 backdrop-blur-md bg-white/80">
+    <div className={`min-h-screen text-foreground font-sans selection:bg-amber-100 ${currentUser.settings?.theme === 'glass' ? 'bg-gradient-to-br from-background to-accent/20' : 'bg-background'}`}>
+      <header className="border-b border-border bg-background sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
         <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-[#1A1A1A] rounded-xl flex items-center justify-center shadow-lg shadow-black/10">
-              <Calendar className="text-white w-5 h-5" />
+            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-black/10">
+              <Calendar className="text-primary-foreground w-5 h-5" />
             </div>
             <div>
               <h1 className="font-black text-lg tracking-tighter leading-none">DERIV <span className="text-amber-500">EVENTS</span></h1>
-              <p className="text-[10px] font-bold opacity-30 tracking-widest uppercase">Global EPM Command</p>
+              <p className="text-[10px] font-bold opacity-30 tracking-widest uppercase text-foreground">Global EPM Command</p>
             </div>
           </div>
           
@@ -124,9 +126,9 @@ export default function App() {
                 <DropdownMenuTrigger className="focus:outline-none">
                   <div className="flex items-center gap-3 group cursor-pointer">
                     <div className="flex flex-col items-end">
-                      <span className="text-black font-black uppercase tracking-tight group-hover:text-amber-500 transition-colors uppercase">{currentUser.name}</span>
+                      <span className="text-foreground font-black uppercase tracking-tight group-hover:text-amber-500 transition-colors uppercase">{currentUser.name}</span>
                     </div>
-                    <div className="w-10 h-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-slate-100 ring-2 ring-transparent group-hover:ring-amber-400 transition-all flex items-center justify-center font-black text-slate-400">
+                    <div className="w-10 h-10 rounded-full border-2 border-border shadow-md overflow-hidden bg-muted ring-2 ring-transparent group-hover:ring-amber-400 transition-all flex items-center justify-center font-black text-muted-foreground">
                         {currentUser.avatar ? (
                           <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
                         ) : (
@@ -160,9 +162,9 @@ export default function App() {
       <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row min-h-[calc(100vh-64px)]">
         {/* Navigation Sidebar */}
         {!selectedProjectId && (
-          <aside className="w-full md:w-64 border-r border-black/5 p-4 space-y-2">
+          <aside className="w-full md:w-64 border-r border-border p-4 space-y-2 bg-background/50">
             <div className="px-2 mb-4">
-              <span className="text-[9px] font-black tracking-widest opacity-30 uppercase">Operations</span>
+              <span className="text-[9px] font-black tracking-widest opacity-30 uppercase text-foreground">Operations</span>
             </div>
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -174,14 +176,14 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-[#1A1A1A] text-white shadow-md' : 'hover:bg-black/5 opacity-60'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-primary text-primary-foreground shadow-md' : 'hover:bg-accent opacity-60 text-foreground'}`}
               >
                 <item.icon size={18} /> {item.label}
               </button>
             ))}
 
             <div className="px-2 mt-8 mb-4">
-              <span className="text-[9px] font-black tracking-widest opacity-30 uppercase">Enterprise Command</span>
+              <span className="text-[9px] font-black tracking-widest opacity-30 uppercase text-foreground">Enterprise Command</span>
             </div>
             {[
               { id: 'management', label: 'Command Center', icon: Command, roles: ['EPM Manager', 'EPM Team Lead', 'EPM Executive', 'EPM HOD', 'EPM Senior Executive'] },
@@ -193,7 +195,7 @@ export default function App() {
                <button
                  key={item.id}
                  onClick={() => setActiveTab(item.id)}
-                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-[#1A1A1A] text-white shadow-md' : 'hover:bg-black/5 opacity-60'}`}
+                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-primary text-primary-foreground shadow-md' : 'hover:bg-accent opacity-60 text-foreground'}`}
                >
                  <item.icon size={18} /> {item.label}
                </button>
@@ -227,10 +229,10 @@ export default function App() {
       <Toaster />
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-2 rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 bg-slate-50 border-b">
+        <DialogContent className="max-w-md p-0 overflow-hidden border-2 rounded-3xl shadow-2xl bg-background border-border">
+          <DialogHeader className="p-6 bg-muted/30 border-b">
             <div className="flex items-center gap-4 mb-4">
-               <div className="w-16 h-16 rounded-full border-2 border-white shadow-lg overflow-hidden bg-slate-200 flex items-center justify-center font-black text-slate-400 text-xl">
+               <div className="w-16 h-16 rounded-full border-2 border-border shadow-lg overflow-hidden bg-muted flex items-center justify-center font-black text-muted-foreground text-xl">
                   {currentUser.avatar ? (
                     <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
                   ) : (
@@ -238,19 +240,19 @@ export default function App() {
                   )}
                </div>
                <div>
-                  <h4 className="font-black text-lg uppercase tracking-tight">{currentUser.name}</h4>
+                  <h4 className="font-black text-lg uppercase tracking-tight text-foreground">{currentUser.name}</h4>
                   <div className="flex items-center gap-2 mt-1">
-                     <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none px-2 py-0.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap">
+                     <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 border-none px-2 py-0.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap">
                        {currentUser.role}
                      </Badge>
-                     <span className="text-[10px] text-muted-foreground font-bold">{currentUser.email}</span>
+                     <span className="text-[10px] text-muted-foreground font-bold leading-none">{currentUser.email}</span>
                   </div>
                </div>
             </div>
-            <DialogTitle className="flex items-center gap-2 font-black uppercase tracking-tight pt-2 border-t">
+            <DialogTitle className="flex items-center gap-2 font-black uppercase tracking-tight pt-2 border-t text-foreground">
               <Settings size={20} className="text-amber-500" /> Dashboard Settings
             </DialogTitle>
-            <DialogDescription className="italic">Customize your personal EPM workspace experience.</DialogDescription>
+            <DialogDescription className="italic text-muted-foreground">Customize your personal EPM workspace experience.</DialogDescription>
           </DialogHeader>
           
           <div className="p-6 space-y-6">
@@ -259,7 +261,7 @@ export default function App() {
                 <>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <label className="text-sm font-black uppercase flex items-center gap-2">
+                      <label className="text-sm font-black uppercase flex items-center gap-2 text-foreground">
                         <Bell size={14} className="opacity-40" /> Notifications
                       </label>
                       <p className="text-[10px] text-muted-foreground italic">Receive alerts for handovers and status updates.</p>
@@ -273,11 +275,36 @@ export default function App() {
                     />
                   </div>
                   
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-border" />
+                  
+                  <div className="space-y-4">
+                    <label className="text-sm font-black uppercase flex items-center gap-2 text-foreground">
+                        <Palette size={14} className="opacity-40" /> Appearance Mode
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'light', label: 'Light', icon: Sun },
+                          { id: 'dark', label: 'Dark', icon: Moon },
+                          { id: 'system', label: 'System', icon: Monitor }
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => setTheme(t.id)}
+                            className={`px-3 py-2.5 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${theme === t.id ? 'border-amber-500 bg-amber-500/5 text-amber-500' : 'border-border bg-muted/30 hover:border-accent opacity-60 text-foreground'}`}
+                          >
+                            <t.icon size={16} />
+                            <span className="text-[9px] font-black uppercase">{t.label}</span>
+                            {theme === t.id && <Check size={10} className="absolute top-1 right-1" />}
+                          </button>
+                        ))}
+                      </div>
+                  </div>
+
+                  <DropdownMenuSeparator className="bg-border" />
                   
                   <div className="space-y-3">
-                    <label className="text-sm font-black uppercase flex items-center gap-2">
-                        <Palette size={14} className="opacity-40" /> Workspace Theme
+                    <label className="text-sm font-black uppercase flex items-center gap-2 text-foreground">
+                        <Palette size={14} className="opacity-40" /> Surface Style
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         {(['modern', 'glass', 'corporate'] as const).map((t) => (
@@ -289,7 +316,7 @@ export default function App() {
                                 ? { ...tempUser.settings, theme: t } 
                                 : { theme: t, notificationsEnabled: true }
                             })}
-                            className={`px-3 py-2 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${tempUser.settings?.theme === t ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-slate-100 hover:border-slate-200 opacity-60'}`}
+                            className={`px-3 py-2 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${tempUser.settings?.theme === t ? 'border-amber-500 bg-amber-500/5 text-amber-500' : 'border-border bg-muted/30 hover:border-accent opacity-60 text-foreground'}`}
                           >
                             {t === tempUser.settings?.theme && <Check size={10} className="inline mr-1" />}
                             {t}
@@ -298,13 +325,13 @@ export default function App() {
                       </div>
                   </div>
 
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-border" />
                   
                   <div className="space-y-3">
-                    <label className="text-sm font-black uppercase flex items-center gap-2">
-                      <Shield size={14} className="opacity-40" /> Position Level Hierarchy
+                    <label className="text-sm font-black uppercase flex items-center gap-2 text-foreground">
+                      <Shield size={14} className="opacity-40" /> Position Hierarchy
                     </label>
-                    <div className="flex flex-col gap-1 border-2 border-slate-100 rounded-2xl p-3 bg-white relative">
+                    <div className="flex flex-col gap-1 border-2 border-border rounded-2xl p-3 bg-muted/20 relative">
                       {[
                         'EPM Executive', 
                         'EPM Senior Executive', 
@@ -313,21 +340,20 @@ export default function App() {
                         'EPM HOD'
                       ].map((role) => (
                         <div key={role} className="flex items-center gap-2 relative z-10">
-                            <div className={`w-1.5 h-1.5 rounded-full ${tempUser.role === role ? 'bg-amber-500 ring-2 ring-amber-200' : 'bg-slate-200'}`} />
-                            <span className={`text-[10px] font-bold tracking-tight ${tempUser.role === role ? 'text-black font-black' : 'text-slate-400'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${tempUser.role === role ? 'bg-amber-500 ring-2 ring-amber-500/20' : 'bg-muted'}`} />
+                            <span className={`text-[10px] font-bold tracking-tight ${tempUser.role === role ? 'text-foreground font-black' : 'text-muted-foreground'}`}>
                               {role}
                             </span>
                             {tempUser.role === role && <Check size={10} className="text-amber-500 ml-auto" />}
                         </div>
                       ))}
                     </div>
-                    <p className="text-[9px] text-muted-foreground italic">Your current level determines your system access and tactical capabilities.</p>
                   </div>
 
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-border" />
 
                   <div className="space-y-3">
-                    <label className="text-sm font-black uppercase flex items-center gap-2">
+                    <label className="text-sm font-black uppercase flex items-center gap-2 text-foreground">
                       <Globe size={14} className="opacity-40" /> Focus Region
                     </label>
                     <Select 
@@ -339,10 +365,10 @@ export default function App() {
                           : { primaryCountry: val, notificationsEnabled: true, theme: 'modern' }
                       })}
                     >
-                      <SelectTrigger className="rounded-xl border-2 font-bold text-xs uppercase h-10">
+                      <SelectTrigger className="rounded-xl border-2 border-border font-bold text-xs uppercase h-10 bg-background text-foreground">
                         <SelectValue placeholder="All Regions" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border-border">
                         <SelectItem value="All">All Regions</SelectItem>
                         <SelectItem value="Malaysia">Malaysia</SelectItem>
                         <SelectItem value="Dubai">Dubai</SelectItem>
@@ -350,16 +376,15 @@ export default function App() {
                         <SelectItem value="Rwanda">Rwanda</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-[9px] text-muted-foreground italic mt-1 italic">Prioritize projects from this location on your dashboard.</p>
                   </div>
                 </>
               )}
             </div>
           </div>
 
-          <DialogFooter className="p-4 bg-slate-50 border-t flex gap-2">
-             <Button variant="outline" className="flex-1 rounded-xl text-xs font-black uppercase" onClick={() => setIsSettingsOpen(false)}>Cancel</Button>
-             <Button className="flex-1 rounded-xl text-xs font-black uppercase bg-black hover:bg-slate-800" onClick={saveSettings}>Apply Settings</Button>
+          <DialogFooter className="p-4 bg-muted/30 border-t flex gap-2">
+             <Button variant="outline" className="flex-1 rounded-xl text-xs font-black uppercase border-border text-foreground hover:bg-accent" onClick={() => setIsSettingsOpen(false)}>Cancel</Button>
+             <Button className="flex-1 rounded-xl text-xs font-black uppercase bg-primary text-primary-foreground hover:opacity-90" onClick={saveSettings}>Apply Settings</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

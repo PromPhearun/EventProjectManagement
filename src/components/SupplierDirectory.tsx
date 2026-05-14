@@ -53,10 +53,10 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
           <p className="text-muted-foreground">Historical list of verified vendors with team reviews.</p>
         </div>
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
           <Input 
             placeholder="Search name, category, or location..." 
-            className="pl-10 h-11 rounded-xl bg-white shadow-sm border-slate-200 focus-visible:ring-blue-600"
+            className="pl-10 h-11 rounded-xl bg-card shadow-sm border-border focus-visible:ring-primary"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -107,7 +107,7 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {s.criteria.map(c => (
-                        <span key={c} className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded border">
+                        <span key={c} className="text-[9px] bg-muted px-1.5 py-0.5 rounded border border-border text-foreground">
                           {c}
                         </span>
                       ))}
@@ -118,12 +118,12 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-9 px-4 gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 font-bold border-2 border-transparent hover:border-amber-200 rounded-xl" 
+                        className="h-9 px-4 gap-2 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10 font-bold border-2 border-transparent hover:border-amber-500/20 rounded-xl" 
                         onClick={() => handleAIInsight(s)}
                       >
                         <Sparkles size={16} /> AI Summary
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 gap-1">
+                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-foreground">
                         <MessageSquare size={14} /> Reviews
                       </Button>
                     </div>
@@ -136,11 +136,11 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
       </div>
 
       <Dialog open={isInsightOpen} onOpenChange={setIsInsightOpen}>
-        <DialogContent className="max-w-md rounded-3xl border-2 overflow-hidden p-0">
-          <DialogHeader className="p-6 bg-slate-50 border-b">
+        <DialogContent className="max-w-md rounded-3xl border-2 border-border overflow-hidden p-0 bg-background text-foreground">
+          <DialogHeader className="p-6 bg-muted/30 border-b border-border">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="text-amber-500" size={16} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Strategic Intelligence</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Strategic Intelligence</span>
             </div>
             <DialogTitle className="text-xl font-black uppercase tracking-tight">
               {selectedSupplier?.name} <span className="text-amber-500">Profile Analysis</span>
@@ -153,12 +153,12 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 <p className="text-xs font-bold uppercase tracking-widest opacity-40">Analyzing reviews and performance data...</p>
               </div>
             ) : (
-              <div className="prose prose-slate prose-sm text-sm font-medium leading-relaxed italic">
+              <div className="prose prose-sm dark:prose-invert text-sm font-medium leading-relaxed italic text-foreground">
                 <Markdown>{insight || ''}</Markdown>
               </div>
             )}
           </CardContent>
-          <div className="p-4 bg-slate-50 border-t text-center">
+          <div className="p-4 bg-muted/30 border-t border-border text-center">
              <p className="text-[9px] uppercase font-black opacity-30">AI Insight derived from historical team feedback.</p>
           </div>
         </DialogContent>

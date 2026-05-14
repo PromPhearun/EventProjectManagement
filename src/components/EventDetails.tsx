@@ -195,45 +195,45 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
           </div>
 
           <Tabs defaultValue="itinerary" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 bg-white border">
-              <TabsTrigger value="itinerary" className="gap-2"><Clock size={16} /> Itinerary</TabsTrigger>
-              <TabsTrigger value="budget" className="gap-2"><DollarSign size={16} /> Budget</TabsTrigger>
-              <TabsTrigger value="suppliers" className="gap-2"><Building size={16} /> Suggestions</TabsTrigger>
-              <TabsTrigger value="comms" className="gap-2"><Mail size={16} /> Comms</TabsTrigger>
-              <TabsTrigger value="approval" className="gap-2"><FileText size={16} /> Approval Template</TabsTrigger>
-              <TabsTrigger value="recon" className="gap-2"><CheckCircle2 size={16} /> Recon</TabsTrigger>
-              <TabsTrigger value="feedback" className="gap-2"><Star size={16} /> Feedback</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-7 bg-muted/20 border border-border">
+              <TabsTrigger value="itinerary" className="gap-2 text-[10px] uppercase font-bold text-foreground"><Clock size={16} /> Itinerary</TabsTrigger>
+              <TabsTrigger value="budget" className="gap-2 text-[10px] uppercase font-bold text-foreground"><DollarSign size={16} /> Budget</TabsTrigger>
+              <TabsTrigger value="suppliers" className="gap-2 text-[10px] uppercase font-bold text-foreground"><Building size={16} /> Suggestions</TabsTrigger>
+              <TabsTrigger value="comms" className="gap-2 text-[10px] uppercase font-bold text-foreground"><Mail size={16} /> Comms</TabsTrigger>
+              <TabsTrigger value="approval" className="gap-2 text-[10px] uppercase font-bold text-foreground"><FileText size={16} /> Approval</TabsTrigger>
+              <TabsTrigger value="recon" className="gap-2 text-[10px] uppercase font-bold text-foreground"><CheckCircle2 size={16} /> Recon</TabsTrigger>
+              <TabsTrigger value="feedback" className="gap-2 text-[10px] uppercase font-bold text-foreground"><Star size={16} /> Feedback</TabsTrigger>
             </TabsList>
             
             <TabsContent value="itinerary" className="mt-6 space-y-6">
               {project.itinerary?.days.map((day, dIdx) => (
-                <Card key={day.dayNumber}>
-                  <CardHeader className="bg-slate-50 py-3 flex flex-row justify-between items-center">
-                    <CardTitle className="text-sm">DAY {day.dayNumber}</CardTitle>
-                    <Badge variant="outline" className="font-mono text-[10px]">EDITABLE</Badge>
+                <Card key={day.dayNumber} className="border-border bg-card">
+                  <CardHeader className="bg-muted/30 border-b border-border py-3 flex flex-row justify-between items-center">
+                    <CardTitle className="text-sm text-foreground">DAY {day.dayNumber}</CardTitle>
+                    <Badge variant="outline" className="font-mono text-[10px] border-border text-foreground">EDITABLE</Badge>
                   </CardHeader>
                   <CardContent className="p-0">
                     <Table>
                       <TableBody>
                         {day.activities.map((activity, aIdx) => (
-                          <TableRow key={activity.id || `activity-${dIdx}-${aIdx}`}>
-                            <TableCell className="w-32 border-r p-2">
+                          <TableRow key={activity.id || `activity-${dIdx}-${aIdx}`} className="border-border hover:bg-muted/10">
+                            <TableCell className="w-32 border-r border-border p-2">
                                <Input 
-                                className="h-8 text-xs font-mono font-bold border-none bg-transparent"
+                                className="h-8 text-xs font-mono font-bold border-none bg-transparent text-foreground"
                                 value={activity.time}
                                 onChange={(e) => handleItineraryChange(dIdx, aIdx, 'time', e.target.value)}
                                />
                             </TableCell>
                             <TableCell className="p-2 space-y-1">
                                <Input 
-                                className="h-8 font-medium border-none bg-transparent"
+                                className="h-8 font-medium border-none bg-transparent text-foreground"
                                 value={activity.description}
                                 onChange={(e) => handleItineraryChange(dIdx, aIdx, 'description', e.target.value)}
                                />
                                <div className="flex items-center gap-2 px-2">
-                                 <MapPin size={10} className="opacity-40" />
+                                 <MapPin size={10} className="text-muted-foreground" />
                                  <Input 
-                                  className="h-6 text-[10px] opacity-60 border-none bg-transparent italic"
+                                  className="h-6 text-[10px] text-muted-foreground border-none bg-transparent italic"
                                   value={activity.location}
                                   onChange={(e) => handleItineraryChange(dIdx, aIdx, 'location', e.target.value)}
                                  />
@@ -250,8 +250,8 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
 
             <TabsContent value="budget" className="mt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex justify-between items-center bg-blue-50 p-3 rounded-2xl border border-blue-100">
-                  <div className="flex items-center gap-2 text-blue-800">
+                <div className="flex justify-between items-center bg-primary/10 p-3 rounded-2xl border border-primary/20">
+                  <div className="flex items-center gap-2 text-primary">
                     <Upload size={18} />
                     <div>
                       <p className="text-xs font-bold uppercase">Invoice Processing</p>
@@ -259,7 +259,7 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
                     </div>
                   </div>
                   <div className="relative">
-                    <Button size="sm" variant="outline" className="bg-white h-8" disabled={isParsingInvoice}>
+                    <Button size="sm" variant="outline" className="bg-background h-8 border-border text-foreground hover:bg-accent" disabled={isParsingInvoice}>
                       {isParsingInvoice ? 'Analyzing...' : 'Upload'}
                     </Button>
                     <input 
@@ -271,8 +271,8 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center bg-amber-50 p-3 rounded-2xl border border-amber-100">
-                  <div className="flex items-center gap-2 text-amber-800">
+                <div className="flex justify-between items-center bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20">
+                  <div className="flex items-center gap-2 text-amber-500">
                     <Sparkles size={18} className={isCheckingVariance ? "animate-pulse" : ""} />
                     <div>
                       <p className="text-xs font-bold uppercase">Variance Detection</p>
@@ -282,7 +282,7 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="bg-white h-8 text-amber-600 border-amber-200" 
+                    className="bg-background h-8 text-amber-500 border-amber-500/20 hover:bg-amber-500/10" 
                     onClick={checkVariance}
                     disabled={isCheckingVariance}
                   >
@@ -292,42 +292,42 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
               </div>
 
               {budgetWarnings && (
-                <Card className="border-amber-200 bg-amber-50/20">
+                <Card className="border-amber-500/30 bg-amber-500/5">
                   <CardContent className="p-4">
                     <div className="flex gap-2 mb-2">
                       <AlertCircle className="text-amber-500" size={16} />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">AI Financial Audit</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">AI Financial Audit</span>
                     </div>
-                    <div className="prose prose-sm prose-amber italic text-amber-900 leading-relaxed font-medium">
+                    <div className="prose prose-sm dark:prose-invert italic text-foreground leading-relaxed font-medium">
                       <Markdown>{budgetWarnings}</Markdown>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              <Card className="rounded-2xl border shadow-sm">
+              <Card className="rounded-2xl border border-border shadow-sm bg-card overflow-hidden">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Est. Cost</TableHead>
-                      <TableHead className="w-10"></TableHead>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow className="border-border">
+                      <TableHead className="text-foreground">Category</TableHead>
+                      <TableHead className="text-foreground">Description</TableHead>
+                      <TableHead className="text-right text-foreground">Est. Cost</TableHead>
+                      <TableHead className="w-10 text-foreground"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {project.budget?.items.map((item, idx) => (
-                      <TableRow key={item.id || `budget-item-${idx}`}>
+                      <TableRow key={item.id || `budget-item-${idx}`} className="border-border hover:bg-muted/10">
                         <TableCell className="w-32">
                           <Input 
-                            className="h-8 text-[10px] font-bold uppercase opacity-60 border-none"
+                            className="h-8 text-[10px] font-bold uppercase opacity-60 border-none bg-transparent text-foreground"
                             value={item.category}
                             onChange={(e) => handleBudgetChange(idx, 'category', e.target.value)}
                           />
                         </TableCell>
                         <TableCell>
                           <Input 
-                            className="h-8 border-none"
+                            className="h-8 border-none bg-transparent text-foreground"
                             value={item.description}
                             onChange={(e) => handleBudgetChange(idx, 'description', e.target.value)}
                           />
@@ -336,18 +336,18 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
                           <div className="flex items-center justify-end gap-2">
                             <Input 
                               type="number"
-                              className="h-8 text-right font-mono bg-slate-50 border-none w-24"
+                              className="h-8 text-right font-mono bg-muted/20 border-border w-24 text-foreground"
                               value={item.estimatedCost}
                               onChange={(e) => handleBudgetChange(idx, 'estimatedCost', parseFloat(e.target.value) || 0)}
                             />
-                            <span className="text-[10px] opacity-40 uppercase">{project.budget?.currency}</span>
+                            <span className="text-[10px] opacity-40 uppercase text-foreground">{project.budget?.currency}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                            <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-6 w-6 text-red-500 hover:text-red-700"
+                            className="h-6 w-6 text-destructive hover:text-destructive/80"
                             onClick={() => {
                               if (!project.budget) return;
                               const newItems = project.budget.items.filter((_, i) => i !== idx);
@@ -360,16 +360,16 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
                         </TableCell>
                       </TableRow>
                     ))}
-                    <TableRow key="add-button-row">
+                    <TableRow key="add-button-row" className="border-border">
                       <TableCell colSpan={4} className="p-0">
-                        <Button variant="ghost" className="w-full rounded-none h-10 gap-2 text-xs opacity-50 hover:opacity-100" onClick={addBudgetItem}>
+                        <Button variant="ghost" className="w-full rounded-none h-10 gap-2 text-xs opacity-50 hover:opacity-100 text-foreground" onClick={addBudgetItem}>
                           <Plus size={14} /> Add Line Item
                         </Button>
                       </TableCell>
                     </TableRow>
-                    <TableRow key="total-row" className="bg-slate-50 border-t-2">
-                      <TableCell colSpan={2} className="text-right font-bold py-4">TOTAL ESTIMATED</TableCell>
-                      <TableCell colSpan={2} className="text-right font-mono font-black text-lg py-4 px-4">
+                    <TableRow key="total-row" className="bg-muted/30 border-t-2 border-border">
+                      <TableCell colSpan={2} className="text-right font-bold py-4 text-foreground">TOTAL ESTIMATED</TableCell>
+                      <TableCell colSpan={2} className="text-right font-mono font-black text-lg py-4 px-4 text-foreground">
                         {project.budget?.total.toLocaleString()} {project.budget?.currency}
                       </TableCell>
                     </TableRow>
@@ -461,29 +461,29 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
                 <CardContent className="space-y-6">
                   {project.tlFeedback ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold uppercase text-amber-600">Team Lead Remark</span>
-                          <span className="font-bold text-amber-700">{project.tlFeedback.tlRating}/5 Stars</span>
-                        </div>
-                        <p className="text-sm italic text-amber-900">"{project.tlFeedback.tlRemark}"</p>
-                      </div>
-                      <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold uppercase text-blue-600">Member Reflection</span>
-                          <span className="font-bold text-blue-700">{project.tlFeedback.memberRating}/5 Stars</span>
-                        </div>
-                        <p className="text-sm italic text-blue-900">"{project.tlFeedback.memberReflection}"</p>
-                      </div>
-                      {project.tlFeedback.managerRemark && (
-                        <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2 md:col-span-2 lg:col-span-1">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-bold uppercase text-indigo-600">Manager Strategic Note</span>
-                            <span className="font-bold text-indigo-700">{project.tlFeedback.managerRating}/5 Stars</span>
-                          </div>
-                          <p className="text-sm italic text-indigo-900">"{project.tlFeedback.managerRemark}"</p>
-                        </div>
-                      )}
+                       <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 space-y-2">
+                         <div className="flex justify-between items-center">
+                           <span className="text-[10px] font-bold uppercase text-amber-500">Team Lead Remark</span>
+                           <span className="font-bold text-amber-500">{project.tlFeedback.tlRating}/5 Stars</span>
+                         </div>
+                         <p className="text-sm italic opacity-90 text-foreground">"{project.tlFeedback.tlRemark}"</p>
+                       </div>
+                       <div className="p-4 bg-primary/10 rounded-xl border border-primary/20 space-y-2">
+                         <div className="flex justify-between items-center">
+                           <span className="text-[10px] font-bold uppercase text-primary">Member Reflection</span>
+                           <span className="font-bold text-primary">{project.tlFeedback.memberRating}/5 Stars</span>
+                         </div>
+                         <p className="text-sm italic opacity-90 text-foreground">"{project.tlFeedback.memberReflection}"</p>
+                       </div>
+                       {project.tlFeedback.managerRemark && (
+                         <div className="p-4 bg-indigo-500/10 rounded-xl border border-indigo-500/20 space-y-2 md:col-span-2 lg:col-span-1">
+                           <div className="flex justify-between items-center">
+                             <span className="text-[10px] font-bold uppercase text-indigo-500">Manager Strategic Note</span>
+                             <span className="font-bold text-indigo-500">{project.tlFeedback.managerRating}/5 Stars</span>
+                           </div>
+                           <p className="text-sm italic opacity-90 text-foreground">"{project.tlFeedback.managerRemark}"</p>
+                         </div>
+                       )}
                     </div>
                   ) : (
                     <div className="py-12 text-center border-2 border-dashed rounded-xl opacity-30 flex flex-col items-center gap-2">

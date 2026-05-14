@@ -92,23 +92,23 @@ export function EventCreator({ onCreate, suppliers }: EventCreatorProps) {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {selectedCountryBudget && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-primary/10 border-primary/20">
           <CardContent className="pt-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-blue-800">
+            <div className="flex items-center gap-2 text-primary">
               <AlertTriangle size={18} />
               <div className="text-sm">
                 <span className="font-bold">{formData.country}</span> Pre-approved Budget: 
                 <span className="ml-1 font-mono">${selectedCountryBudget.remainingBudget.toLocaleString()}</span> remaining.
               </div>
             </div>
-            <div className="text-[10px] uppercase font-bold opacity-60">
+            <div className="text-[10px] uppercase font-bold opacity-60 text-foreground">
               Trips: {selectedCountryBudget.tripsCount}/{selectedCountryBudget.maxTrips}
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card className="border-2 border-[#141414]/5">
+      <Card className="border-2 border-border bg-card">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
             <Sparkles className="text-amber-500" /> New Marketing Event

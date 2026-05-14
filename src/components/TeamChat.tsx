@@ -84,13 +84,13 @@ export function TeamChat() {
         </div>
       </div>
 
-      <Card className="h-[600px] flex flex-col overflow-hidden border-2 rounded-3xl">
-        <CardHeader className="border-b bg-slate-50/50">
-          <CardTitle className="flex items-center gap-2 text-md">
+      <Card className="h-[600px] flex flex-col overflow-hidden border-2 border-border rounded-3xl bg-card">
+        <CardHeader className="border-b border-border bg-muted/20">
+          <CardTitle className="flex items-center gap-2 text-md text-foreground">
             <MessageCircle className="text-blue-500" /> General Workspace
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col bg-card">
           <ScrollArea className="flex-1 p-6" ref={scrollRef}>
              <div className="space-y-6">
                {messages.map((msg) => (
@@ -98,35 +98,35 @@ export function TeamChat() {
                    <img 
                     src={getUserAvatar(msg.sender)} 
                     alt={msg.sender} 
-                    className="w-8 h-8 rounded-full border shadow-sm shrink-0"
+                    className="w-8 h-8 rounded-full border border-border shadow-sm shrink-0"
                     referrerPolicy="no-referrer"
                    />
                    <div className={`flex flex-col ${msg.sender === currentUser.name ? 'items-end' : 'items-start'}`}>
                     <div className="flex items-center gap-1.5 mb-1 px-1">
-                      <span className="text-[10px] font-bold opacity-40 uppercase">{msg.sender}</span>
-                      <span className="text-[9px] opacity-30">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[10px] font-bold opacity-40 uppercase text-foreground">{msg.sender}</span>
+                      <span className="text-[9px] opacity-30 text-foreground">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div className={`max-w-[100%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.sender === currentUser.name ? 'bg-black text-white rounded-tr-none' : 'bg-slate-100 rounded-tl-none text-slate-800'}`}>
+                    <div className={`max-w-[100%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.sender === currentUser.name ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted rounded-tl-none text-foreground border border-border'}`}>
                       {msg.text}
                     </div>
                    </div>
                  </div>
                ))}
                {messages.length === 0 && (
-                 <div className="text-center py-20 opacity-20 italic">No messages yet. Start a conversation!</div>
+                 <div className="text-center py-20 opacity-20 italic text-foreground">No messages yet. Start a conversation!</div>
                )}
              </div>
           </ScrollArea>
 
-          <div className="p-4 border-t bg-white">
+          <div className="p-4 border-t border-border bg-background">
             <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
               <Input 
                 placeholder="Type your message..." 
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
-                className="flex-1"
+                className="flex-1 bg-background text-foreground border-border"
               />
-              <Button type="submit" size="icon" disabled={!inputText.trim()}>
+              <Button type="submit" size="icon" disabled={!inputText.trim()} className="bg-primary text-primary-foreground hover:opacity-90">
                 <Send size={18} />
               </Button>
             </form>

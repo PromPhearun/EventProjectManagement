@@ -49,13 +49,13 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-700 border-green-200';
-      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'approved': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'under_review': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'on_hold': return 'bg-red-100 text-red-700 border-red-200';
-      case 'reconciling': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'completed': return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50';
+      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50';
+      case 'approved': return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50';
+      case 'under_review': return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/50';
+      case 'on_hold': return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50';
+      case 'reconciling': return 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -70,25 +70,25 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
         </div>
         
         <div className="flex gap-2 w-full md:w-auto">
-          <div className="bg-white border rounded-lg p-1 flex gap-1 shadow-sm">
+          <div className="bg-background border border-border rounded-lg p-1 flex gap-1 shadow-sm">
              <button 
               onClick={() => setShowAll(false)}
-              className={`px-4 py-1.5 text-[10px] font-black uppercase rounded transition-all ${!showAll ? 'bg-black text-white' : 'hover:bg-slate-50 text-slate-500'}`}
+              className={`px-4 py-1.5 text-[10px] font-black uppercase rounded transition-all ${!showAll ? 'bg-primary text-primary-foreground' : 'hover:bg-accent text-muted-foreground'}`}
              >
                Personal
              </button>
              <button 
               onClick={() => setShowAll(true)}
-              className={`px-4 py-1.5 text-[10px] font-black uppercase rounded transition-all ${showAll ? 'bg-black text-white' : 'hover:bg-slate-50 text-slate-500'}`}
+              className={`px-4 py-1.5 text-[10px] font-black uppercase rounded transition-all ${showAll ? 'bg-primary text-primary-foreground' : 'hover:bg-accent text-muted-foreground'}`}
              >
                Team View
              </button>
           </div>
-          <Button variant="outline" size="sm" className="gap-2 h-9 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100" onClick={handleGenerateDigest} disabled={generatingDigest}>
+          <Button variant="outline" size="sm" className="gap-2 h-9 border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-black uppercase text-[10px]" onClick={handleGenerateDigest} disabled={generatingDigest}>
             <Sparkles size={14} className={generatingDigest ? "animate-pulse" : ""} />
             AI Daily Digest
           </Button>
-          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={handleSync} disabled={syncing}>
+          <Button variant="outline" size="sm" className="gap-2 h-9 border-border text-foreground font-black uppercase text-[10px]" onClick={handleSync} disabled={syncing}>
             <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
             Sync ClickUp
           </Button>
@@ -96,14 +96,14 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
       </div>
 
       {filteredProjects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center space-y-4 bg-white border border-dashed rounded-3xl">
-          <div className="p-6 bg-slate-50 border rounded-full">
-            <Briefcase className="w-10 h-10 opacity-20" />
+        <div className="flex flex-col items-center justify-center py-24 text-center space-y-4 bg-background border border-dashed border-border rounded-3xl">
+          <div className="p-6 bg-muted border border-border rounded-full">
+            <Briefcase className="w-10 h-10 opacity-20 text-foreground" />
           </div>
           <div>
-            <h3 className="text-xl font-black">{showAll ? 'No active events found' : 'No events assigned to you'}</h3>
+            <h3 className="text-xl font-black text-foreground">{showAll ? 'No active events found' : 'No events assigned to you'}</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
-              {showAll ? 'The organization currenty has no active event projects.' : 'Switch to Team View to review colleague work or create a new event draft.'}
+              {showAll ? 'The organization currently has no active event projects.' : 'Switch to Team View to review colleague work or create a new event draft.'}
             </p>
           </div>
         </div>
@@ -112,7 +112,7 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
           {filteredProjects.map((project) => (
             <Card 
               key={project.id} 
-              className={`cursor-pointer group overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${project.epmName === currentUser.name ? 'border-amber-100 bg-amber-50/5 hover:border-amber-400' : 'hover:border-slate-400 bg-white'}`}
+              className={`cursor-pointer group overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${project.epmName === currentUser.name ? 'border-amber-500/20 bg-amber-500/5 hover:border-amber-400' : 'hover:border-primary border-border bg-card'}`}
               onClick={() => onSelectProject(project.id)}
             >
               <CardHeader className="pb-2">
@@ -150,9 +150,9 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
                   </div>
                 </div>
                 {project.budget && (
-                  <div className={`p-4 rounded-2xl flex flex-col gap-1 ${project.epmName === currentUser.name ? 'bg-amber-100/50' : 'bg-slate-50'}`}>
-                    <span className="text-[9px] uppercase font-black opacity-30">Current Allocation</span>
-                    <div className="text-xl font-black font-mono tracking-tighter">
+                  <div className={`p-4 rounded-2xl flex flex-col gap-1 ${project.epmName === currentUser.name ? 'bg-amber-500/10' : 'bg-muted/50'}`}>
+                    <span className="text-[9px] uppercase font-black opacity-30 text-foreground">Current Allocation</span>
+                    <div className="text-xl font-black font-mono tracking-tighter text-foreground">
                       {project.budget.total.toLocaleString()} <span className="text-xs opacity-50">{project.budget.currency}</span>
                     </div>
                   </div>
@@ -164,22 +164,22 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
       )}
 
       <Dialog open={isDigestOpen} onOpenChange={setIsDigestOpen}>
-        <DialogContent className="max-w-2xl rounded-3xl border-2 overflow-hidden p-0">
-          <DialogHeader className="p-6 bg-amber-50 border-b">
+        <DialogContent className="max-w-2xl rounded-3xl border-2 border-border overflow-hidden p-0 bg-background">
+          <DialogHeader className="p-6 bg-amber-500/10 border-b border-border">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="text-amber-500 fill-amber-500" size={20} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Intelligent EPM Briefing</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Intelligent EPM Briefing</span>
             </div>
-            <DialogTitle className="text-2xl font-black uppercase tracking-tight italic">Daily Operational Digest</DialogTitle>
-            <DialogDescription className="italic">AI-tailored summary of your progress, gaps, and focus areas based on your ${currentUser.role} level.</DialogDescription>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight italic text-foreground">Daily Operational Digest</DialogTitle>
+            <DialogDescription className="italic text-muted-foreground">AI-tailored summary of your progress, gaps, and focus areas based on your {currentUser.role} level.</DialogDescription>
           </DialogHeader>
-          <CardContent className="p-6 max-h-[60vh] overflow-y-auto">
-             <div className="prose prose-slate max-w-none text-sm font-medium leading-relaxed italic">
+          <CardContent className="p-6 max-h-[60vh] overflow-y-auto bg-background">
+             <div className="prose prose-slate dark:prose-invert max-w-none text-sm font-medium leading-relaxed italic text-foreground">
                 <Markdown>{digest || ''}</Markdown>
              </div>
           </CardContent>
-          <div className="p-4 bg-slate-50 border-t text-center">
-             <p className="text-[10px] uppercase font-black opacity-30 tracking-widest">Powered by Gemini 3.1 Pro & Strategic Analytics</p>
+          <div className="p-4 bg-muted/30 border-t border-border text-center">
+             <p className="text-[10px] uppercase font-black opacity-30 tracking-widest text-foreground">Powered by Gemini 3.1 Pro & Strategic Analytics</p>
           </div>
         </DialogContent>
       </Dialog>
