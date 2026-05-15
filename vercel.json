@@ -19,10 +19,6 @@
   ],
   "rewrites": [
     {
-      "source": "/api/webhook",
-      "destination": "/api/webhook"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "server.ts"
     },

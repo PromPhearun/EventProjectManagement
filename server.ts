@@ -625,23 +625,50 @@ app.post("/api/ai/generate-epm-task-summary", async (req, res) => {
 });
 
 // ClickUp In-Memory Store
-const clickupUpdates: any[] = [];
+const clickupUpdates: any[] = [
+  {
+    id: "seed-1",
+    taskId: "8672abc12",
+    taskName: "Update Guest List",
+    event: "taskStatusUpdated",
+    assignees: "Jean Damour",
+    creator: "Sarah Connor",
+    history: [],
+    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() // 15 mins ago
+  },
+  {
+    id: "seed-2",
+    taskId: "8672xyz45",
+    taskName: "AV Quotation Review",
+    event: "taskCreated",
+    assignees: "Sarah Connor",
+    creator: "John Doe",
+    history: [],
+    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() // 5 mins ago
+  }
+];
 const MAX_UPDATES = 20;
 
-// ClickUp Webhook Endpoint (Moved to /api/webhook)
+// ClickUp Webhook Endpoint
 app.post("/api/webhook", async (req, res) => {
   console.log("--- ClickUp Webhook Received ---");
   
   const payload = req.body;
   
-  // Use payload from ClickUp webhook if available, otherwise fallback to root body
+  // Robust payload extraction to match ClickUp's actual structure
   const taskData = payload.payload || payload;
   
-  const taskId = taskData.id || payload.task_id;
+  const taskId = taskData.id || payload.task_id || "Unknown ID";
   const taskName = taskData.name || "Unknown Task";
   const event = payload.event || "taskUpdated";
-  const assignees = taskData.assignees ? taskData.assignees.map((a: any) => a.username).join(', ') : 'No Assignee';
-  const creator = taskData.creator ? taskData.creator.username : 'Unknown Creator';
+  
+  const extractUsername = (u: any) => u?.username || u?.user?.username || "Unknown";
+  
+  const assignees = Array.isArray(taskData.assignees) 
+    ? taskData.assignees.map(extractUsername).join(', ') 
+    : (taskData.assignees ? extractUsername(taskData.assignees) : 'No Assignee');
+    
+  const creator = extractUsername(taskData.creator);
 
   console.log(`Event: ${event}`);
   console.log(`Task ID: ${taskId}`);
@@ -655,8 +682,8 @@ app.post("/api/webhook", async (req, res) => {
     taskId,
     taskName,
     event,
-    assignees, // Added for potential future UI use
-    creator,   // Added for potential future UI use
+    assignees,
+    creator,
     history: payload.history_items || [],
     fullPayload: payload,
     timestamp: new Date().toISOString()
