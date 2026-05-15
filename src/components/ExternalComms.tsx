@@ -7,7 +7,6 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Mail, Send, History, Sparkles, Loader2, Building, PlaneTakeoff, CheckCircle2, AlertCircle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { GoogleGenAI } from "@google/genai";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface ExternalCommsProps {
@@ -27,14 +26,6 @@ export function ExternalComms({ project, onUpdate }: ExternalCommsProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [showAddContact, setShowAddContact] = useState(false);
   const [newContact, setNewContact] = useState({ name: '', email: '' });
-
-  const getAI = () => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not defined. Please set it in your environment variables.");
-    }
-    return new GoogleGenAI({ apiKey });
-  };
 
   useEffect(() => {
     checkGoogleStatus();
@@ -98,33 +89,16 @@ export function ExternalComms({ project, onUpdate }: ExternalCommsProps) {
   const generateDraft = async () => {
     setIsGenerating(true);
     try {
-      const ai = getAI();
-      const prompt = `
-        Draft a professional business email from an Event Project Manager (EPM) at Deriv.
-        
-        Recipient Type: ${recipientType}
-        Project Title: ${project.title}
-        Project Location: ${project.city}, ${project.country}
-        Event Type: ${project.type}
-        Start Date: ${project.startDate}
-        Guest Count: ${project.guestCount}
-        
-        Context: 
-        ${recipientType === 'Supplier' ? 'We need a quotation for generic event services (AV, catering, or local logistics).' : ''}
-        ${recipientType === 'Hotel' ? 'We need a quotation for accommodation and meeting room facilities for the guests.' : ''}
-        ${recipientType === 'Travel Desk' ? 'The event has been approved. Please start purchasing flight tickets for the guest list mentioned in our system.' : ''}
-        
-        Tone: Professional, concise, corporate.
-        Make sure to include placeholders for specific details if needed like [Insert Supplier Name].
-        Return ONLY the subject line and then the body, separated by "---SUBJECT_BODY_SEP---".
-      `;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
+      const response = await fetch('/api/ai/generate-outreach-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ params: { recipientType }, project })
       });
+      
+      if (!response.ok) throw new Error("Failed to generate outreach");
+      const data = await response.json();
 
-      const text = response.text || '';
+      const text = data.text || '';
       const [genSubject, genBody] = text.split('---SUBJECT_BODY_SEP---');
       
       setSubject(genSubject?.trim() || `Inquiry regarding ${project.title}`);

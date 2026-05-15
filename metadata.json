@@ -2,5 +2,5 @@
   "name": "Prom EPM-Automation",
   "description": "An elite enterprise EPM Command \u0026 Intelligence System with multi-tier role synchronization, AI-powered performance analysis, and automated strategic handover management.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
