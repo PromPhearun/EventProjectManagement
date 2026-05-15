@@ -4,6 +4,7 @@ import path from "path";
 import { google } from "googleapis";
 import cookieSession from "cookie-session";
 import dotenv from "dotenv";
+import * as admin from "firebase-admin";
 
 dotenv.config();
 
@@ -12,6 +13,59 @@ export default app; // Export for Vercel
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
+
+// ClickUp In-Memory Store (Fallback for when Firebase is not available)
+const clickupUpdates: any[] = [];
+const MAX_UPDATES = 20;
+
+// ClickUp Webhook Endpoint (Moved to /api/webhook)
+app.post("/api/webhook", async (req, res) => {
+  console.log("--- ClickUp Webhook Received ---");
+  
+  const payload = req.body;
+  
+  // Use payload from ClickUp webhook if available, otherwise fallback to root body
+  const taskData = payload.payload || payload;
+  
+  const taskId = taskData.id || payload.task_id;
+  const taskName = taskData.name || "Unknown Task";
+  const event = payload.event || "taskUpdated";
+  const assignees = taskData.assignees ? taskData.assignees.map((a: any) => a.username).join(', ') : 'No Assignee';
+  const creator = taskData.creator ? taskData.creator.username : 'Unknown Creator';
+
+  console.log(`Event: ${event}`);
+  console.log(`Task ID: ${taskId}`);
+  console.log(`Task Name: ${taskName}`);
+  console.log(`Assignee: ${assignees}`);
+  console.log(`Creator: ${creator}`);
+  console.log('--------------------------------');
+  
+  const update = {
+    id: Math.random().toString(36).substring(7),
+    taskId,
+    taskName,
+    event,
+    assignees, // Added for potential future UI use
+    creator,   // Added for potential future UI use
+    history: payload.history_items || [],
+    fullPayload: payload,
+    timestamp: new Date().toISOString()
+  };
+
+  // Add to local store for the frontend feed
+  clickupUpdates.unshift(update);
+  if (clickupUpdates.length > MAX_UPDATES) {
+    clickupUpdates.pop();
+  }
+
+  res.status(200).json({ status: "received" });
+});
+
+// Endpoint for frontend to fetch ClickUp updates
+app.get("/api/clickup/updates", (req, res) => {
+  res.json(clickupUpdates);
+});
+
 app.use(cookieSession({
   name: 'session',
   keys: [process.env.SESSION_SECRET || 'epm-secret-key'],

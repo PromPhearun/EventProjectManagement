@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, EventProject } from "../types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Calendar, MapPin, Users as UsersIcon, ChevronRight, Briefcase, RefreshCcw, User as UserIcon, Globe, Sparkles } from "lucide-react";
+import { Calendar, MapPin, Users as UsersIcon, ChevronRight, Briefcase, RefreshCcw, User as UserIcon, Globe, Sparkles, Activity } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { generateDailyEPMDigest } from "../services/gemini";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import Markdown from "react-markdown";
+import { subscribeToClickUpUpdates, ClickUpUpdate } from "../services/clickupService";
 
 interface DashboardProps {
   projects: EventProject[];
@@ -21,6 +22,24 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
   const [generatingDigest, setGeneratingDigest] = useState(false);
   const [digest, setDigest] = useState<string | null>(null);
   const [isDigestOpen, setIsDigestOpen] = useState(false);
+  const [clickUpUpdates, setClickUpUpdates] = useState<ClickUpUpdate[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToClickUpUpdates((updates) => {
+      setClickUpUpdates(updates);
+      if (updates.length > 0) {
+        // Optional: show toast for newest update if it's recent
+        const newest = updates[0];
+        const updateTime = new Date(newest.timestamp).getTime();
+        if (Date.now() - updateTime < 10000) { // last 10 seconds
+          toast.success(`ClickUp Update: ${newest.taskName}`, {
+            description: `Event: ${newest.event}`
+          });
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSync = () => {
     setSyncing(true);
@@ -94,6 +113,37 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
           </Button>
         </div>
       </div>
+
+      {clickUpUpdates.length > 0 && (
+        <Card className="border-2 border-dashed border-[#7B68EE]/30 bg-[#7B68EE]/5 overflow-hidden rounded-3xl">
+          <CardHeader className="py-3 px-6 border-b border-[#7B68EE]/10 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity size={16} className="text-[#7B68EE]" />
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-[#7B68EE]">Live ClickUp Webhook Feed</CardTitle>
+            </div>
+            <Badge variant="outline" className="bg-[#7B68EE] text-white border-none text-[8px] animate-pulse">LIVE</Badge>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-[#7B68EE]/10 max-h-48 overflow-y-auto">
+              {clickUpUpdates.map((update) => (
+                <div key={update.id} className="px-6 py-3 flex items-center justify-between hover:bg-[#7B68EE]/5 transition-colors">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-foreground">{update.taskName}</span>
+                    <span className="text-[9px] text-muted-foreground opacity-70">
+                      {update.event.replace(/([A-Z])/g, ' $1').toLowerCase()} • task: {update.taskId}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9px] font-mono text-muted-foreground">
+                      {new Date(update.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {filteredProjects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center space-y-4 bg-background border border-dashed border-border rounded-3xl">
