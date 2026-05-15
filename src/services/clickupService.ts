@@ -3,6 +3,8 @@ export interface ClickUpUpdate {
   taskId: string;
   taskName: string;
   event: string;
+  assignees?: string;
+  creator?: string;
   history: any[];
   timestamp: string;
 }
