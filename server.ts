@@ -659,6 +659,12 @@ app.post("/api/webhook", async (req, res) => {
   const taskData = payload.payload || payload;
   const taskObject = taskData.task || taskData;
   
+  console.log(`[${new Date().toISOString()}] ClickUp Webhook Received:`, {
+    event: payload.event,
+    taskId: taskObject.id || payload.task_id,
+    taskName: taskObject.name || payload.task_name
+  });
+  
   const taskId = taskObject.id || payload.task_id || "UNKNOWN ID";
   const taskName = taskObject.name || payload.task_name || (payload.event ? `Task ${payload.event.replace(/([A-Z])/g, ' $1')}` : "Unknown ClickUp Task");
   
@@ -680,13 +686,6 @@ app.post("/api/webhook", async (req, res) => {
   const creatorUser = taskObject.creator || payload.creator || payload.user;
   const creator = creatorUser ? extractUsername(creatorUser) : 'System';
 
-  console.log(`Event: ${event}`);
-  console.log(`Task ID: ${taskId}`);
-  console.log(`Task Name: ${taskName}`);
-  console.log(`Assignee: ${assignees}`);
-  console.log(`Creator: ${creator}`);
-  console.log('--------------------------------');
-  
   const update = {
     id: Math.random().toString(36).substring(7),
     taskId,
@@ -712,6 +711,14 @@ app.post("/api/webhook", async (req, res) => {
 app.get("/api/clickup/updates", (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.json(clickupUpdates);
+});
+
+// Endpoint to help user configure webhook
+app.get("/api/clickup/webhook-config", (req, res) => {
+  const protocol = req.headers['x-forwarded-proto'] || 'http';
+  const host = req.headers.host;
+  const url = `${protocol}://${host}/api/webhook`;
+  res.json({ url });
 });
 
 app.use(cookieSession({

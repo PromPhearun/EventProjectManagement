@@ -24,6 +24,8 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
   const [isDigestOpen, setIsDigestOpen] = useState(false);
   const [clickUpUpdates, setClickUpUpdates] = useState<ClickUpUpdate[]>([]);
   const [activeView, setActiveView] = useState<'projects' | 'tasks'>('projects');
+  const [webhookUrl, setWebhookUrl] = useState<string | null>(null);
+  const [isWebhookHelpOpen, setIsWebhookHelpOpen] = useState(false);
 
   const fetchClickUpData = useCallback(async () => {
     try {
@@ -39,11 +41,24 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
     return null;
   }, []);
 
+  const fetchWebhookConfig = useCallback(async () => {
+    try {
+      const response = await fetch('/api/clickup/webhook-config');
+      if (response.ok) {
+        const data = await response.json();
+        setWebhookUrl(data.url);
+      }
+    } catch (error) {
+      console.error("Failed to fetch webhook config:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchClickUpData();
-    const interval = setInterval(fetchClickUpData, 10000); // Poll every 10s
+    fetchWebhookConfig();
+    const interval = setInterval(fetchClickUpData, 3000); // Polling every 3 seconds for "instant" feel
     return () => clearInterval(interval);
-  }, [fetchClickUpData]);
+  }, [fetchClickUpData, fetchWebhookConfig]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -143,7 +158,12 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
               <Activity className="text-[#7B68EE]" size={20} />
               External ClickUp Task Queue
             </h3>
-            <Badge variant="outline" className="bg-[#7B68EE]/10 text-[#7B68EE] border-[#7B68EE]/30 animate-pulse">Live Synchronization Active</Badge>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="h-6 text-[8px] font-black uppercase border-[#7B68EE]/30 text-[#7B68EE] hover:bg-[#7B68EE]/10" onClick={() => setIsWebhookHelpOpen(true)}>
+                Webhook Config Help
+              </Button>
+              <Badge variant="outline" className="bg-[#7B68EE]/10 text-[#7B68EE] border-[#7B68EE]/30 animate-pulse">Live Synchronization Active</Badge>
+            </div>
           </div>
 
           {clickUpUpdates.length === 0 ? (
@@ -278,6 +298,48 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
           </CardContent>
           <div className="p-4 bg-muted/30 border-t border-border text-center">
              <p className="text-[10px] uppercase font-black opacity-30 tracking-widest text-foreground">Powered by Gemini 3.1 Pro & Strategic Analytics</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isWebhookHelpOpen} onOpenChange={setIsWebhookHelpOpen}>
+        <DialogContent className="max-w-md rounded-3xl border-2 border-[#7B68EE]/20 overflow-hidden p-0 bg-background">
+          <DialogHeader className="p-6 bg-[#7B68EE]/5 border-b border-[#7B68EE]/10">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="text-[#7B68EE]" size={20} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#7B68EE]">Technical Integration</span>
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-foreground">Webhook Setup</DialogTitle>
+            <DialogDescription className="italic text-muted-foreground">For instant updates, ClickUp needs to know where to send its event data.</DialogDescription>
+          </DialogHeader>
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
+              <p className="text-xs font-black uppercase opacity-60">1. Target URL</p>
+              <div className="p-3 bg-muted rounded-xl flex items-center justify-between group">
+                <code className="text-[10px] font-mono break-all">{webhookUrl || 'Loading...'}</code>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                  if (webhookUrl) {
+                    navigator.clipboard.writeText(webhookUrl);
+                    toast.success("URL copied to clipboard");
+                  }
+                }}>
+                  <RefreshCcw size={12} />
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground italic">Copy this URL and paste it into ClickUp's Webhook settings.</p>
+            </div>
+            
+            <div className="space-y-2 pt-2 border-t border-border">
+              <p className="text-xs font-black uppercase opacity-60">2. Why click "Test Webhook"?</p>
+              <p className="text-[11px] text-foreground font-medium leading-relaxed">
+                ClickUp only sends automated events when tasks are modified in the ClickUp UI. "Test Webhook" is a manual trigger that helps verify the connection is active right now.
+              </p>
+              <p className="text-[11px] text-amber-600 font-bold leading-relaxed mt-2 italic">
+                Note: Since this is a development instance, the URL may change if you restart. Always ensure ClickUp is pointing to the current app URL.
+              </p>
+            </div>
+          </div>
+          <div className="p-4 bg-muted/30 border-t border-border flex justify-end">
+             <Button size="sm" className="bg-[#7B68EE] hover:bg-[#7B68EE]/90 h-8 uppercase text-[10px] font-black" onClick={() => setIsWebhookHelpOpen(false)}>Got it</Button>
           </div>
         </DialogContent>
       </Dialog>
