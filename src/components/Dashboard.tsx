@@ -277,15 +277,10 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {clickUpUpdates.map((update) => (
-                <a 
-                  key={update.id} 
-                  href={update.taskUrl || `https://app.clickup.com/t/${update.taskId}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block group no-underline"
-                >
-                  <Card className="border-2 border-[#7B68EE]/20 hover:border-[#7B68EE]/50 bg-background transition-all hover:shadow-lg rounded-3xl overflow-hidden h-full">
+              {clickUpUpdates.map((update) => {
+                const isUnknown = update.taskId === "UNKNOWN ID";
+                const cardContent = (
+                  <Card className={`border-2 ${isUnknown ? 'border-muted' : 'border-[#7B68EE]/20 hover:border-[#7B68EE]/50'} bg-background transition-all hover:shadow-lg rounded-3xl overflow-hidden h-full`}>
                      <div className="p-4 flex flex-col gap-3">
                         <div className="flex justify-between items-start">
                           <div className="flex flex-col">
@@ -309,8 +304,22 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
                         </div>
                      </div>
                   </Card>
-                </a>
-              ))}
+                );
+
+                if (isUnknown) return <div key={update.id}>{cardContent}</div>;
+
+                return (
+                  <a 
+                    key={update.id} 
+                    href={update.taskUrl || `https://app.clickup.com/t/${update.taskId}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block group no-underline"
+                  >
+                    {cardContent}
+                  </a>
+                );
+              })}
             </div>
           )}
         </div>

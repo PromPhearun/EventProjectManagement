@@ -656,12 +656,14 @@ app.post("/api/webhook", async (req, res) => {
   const payload = req.body;
   
   // Robust payload extraction to match ClickUp's actual structure
+  console.log(`[CLICKUP] Webhook payload received:`, JSON.stringify(payload, null, 2));
+
   // Priority: 
   // 1. payload.task (for real events)
   // 2. payload.payload.task (for some versions)
   // 3. payload.task_id (for test/simple events)
   const taskObject = payload.task || payload.payload?.task || {};
-  const taskId = taskObject.id || payload.task_id || payload.payload?.task_id || "UNKNOWN ID";
+  const taskId = taskObject.id || payload.task_id || payload.payload?.task_id || payload.id || "UNKNOWN ID";
   
   let taskName = taskObject.name || payload.task_name || payload.payload?.task_name;
   if (!taskName) {
@@ -672,7 +674,7 @@ app.post("/api/webhook", async (req, res) => {
     }
   }
   
-  const taskUrl = taskObject.url || payload.task_url || payload.payload?.task_url || `https://app.clickup.com/t/${taskId}`;
+  let taskUrl = taskObject.url || payload.task_url || payload.payload?.task_url || (taskId !== "UNKNOWN ID" ? `https://app.clickup.com/t/${taskId}` : "");
   const event = payload.event || "taskUpdated";
   
   const extractUsername = (u: any) => u?.username || u?.user?.username || u?.display_name || "Unknown";
@@ -692,9 +694,8 @@ app.post("/api/webhook", async (req, res) => {
   const creator = creatorUser ? extractUsername(creatorUser) : 'System';
 
   // If we have an API key, we should try to fetch full task details for webhooks that lack them (like "Test Webhook")
-  let syncedTask = null;
   const apiKey = process.env.CLICKUP_API_KEY;
-  if (apiKey && taskId !== "UNKNOWN ID" && (!taskObject.name || !taskObject.assignees)) {
+  if (apiKey && taskId !== "UNKNOWN ID" && (!taskObject.name || !taskObject.assignees || !taskObject.url)) {
     try {
       console.log(`[CLICKUP] Webhook received for ${taskId}, fetching full details...`);
       const response = await fetch(`https://api.clickup.com/api/v2/task/${taskId}`, {
@@ -702,9 +703,10 @@ app.post("/api/webhook", async (req, res) => {
       });
       if (response.ok) {
         const data = await response.json();
-        syncedTask = data;
         taskName = data.name || taskName;
         assignees = data.assignees?.map((a: any) => a.username).join(', ') || assignees;
+        taskUrl = data.url || taskUrl;
+        console.log(`[CLICKUP] Successfully enriched webhook data for ${taskId}`);
       }
     } catch (e) {
       console.error("Failed to fetch task details for webhook", e);
