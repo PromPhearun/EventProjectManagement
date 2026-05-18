@@ -707,10 +707,88 @@ app.post("/api/webhook", async (req, res) => {
   res.status(200).json({ status: "received" });
 });
 
+// Endpoint to fetch real tasks from ClickUp API directly
+app.post("/api/clickup/sync", async (req, res) => {
+  const apiKey = process.env.CLICKUP_API_KEY;
+  const listId = process.env.CLICKUP_LIST_ID;
+
+  if (!apiKey || !listId) {
+    return res.status(400).json({ 
+      error: "CLICKUP_API_KEY and CLICKUP_LIST_ID environment variables must be set for manual sync." 
+    });
+  }
+
+  try {
+    console.log(`[CLICKUP] Manual sync requested for list ${listId}`);
+    const response = await fetch(`https://api.clickup.com/api/v2/list/${listId}/task?archived=false`, {
+      headers: {
+        'Authorization': apiKey,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`ClickUp API Error: ${response.status} - ${errorText}`);
+      return res.status(response.status).json({ error: `ClickUp API returned ${response.status}: ${errorText}` });
+    }
+
+    const data = await response.json();
+    const tasks = data.tasks || [];
+
+    // Map ClickUp tasks to our internal update format
+    const newUpdates = tasks.map((task: any) => ({
+      id: `sync-${task.id}-${Date.now()}`,
+      taskId: task.id,
+      taskName: task.name,
+      event: "manualSync",
+      assignees: task.assignees?.map((a: any) => a.username).join(', ') || 'No Assignee',
+      creator: task.creator?.username || 'System',
+      history: [],
+      timestamp: new Date().toISOString()
+    }));
+
+    // For manual sync, we clear old updates or prepend them? 
+    // Usually, real tasks are more important than old webhook events.
+    // Let's prepend them and keep unique ones if possible, or just replace the top ones.
+    
+    // Simple approach: prepend and trim to MAX_UPDATES
+    newUpdates.forEach((u: any) => {
+      // Check if we already have a recent sync for this task to avoid duplicates in the UI
+      const exists = clickupUpdates.some(existing => 
+        existing.taskId === u.taskId && 
+        (existing.event === 'manualSync' || existing.event === 'taskUpdated') &&
+        (new Date().getTime() - new Date(existing.timestamp).getTime() < 60000) // within 1 minute
+      );
+      
+      if (!exists) {
+        clickupUpdates.unshift(u);
+      }
+    });
+
+    if (clickupUpdates.length > MAX_UPDATES) {
+      clickupUpdates.splice(MAX_UPDATES);
+    }
+
+    res.json({ 
+      status: "success", 
+      count: newUpdates.length,
+      updates: clickupUpdates 
+    });
+  } catch (error) {
+    console.error("ClickUp Sync Error:", error);
+    res.status(500).json({ error: "Failed to connect to ClickUp API" });
+  }
+});
+
 // Endpoint for frontend to fetch ClickUp updates
 app.get("/api/clickup/updates", (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.json(clickupUpdates);
+  const isConfigured = !!(process.env.CLICKUP_API_KEY && process.env.CLICKUP_LIST_ID);
+  res.json({
+    updates: clickupUpdates,
+    isConfigured
+  });
 });
 
 // Endpoint to help user configure webhook
@@ -729,15 +807,23 @@ app.use(cookieSession({
   sameSite: 'none'
 }));
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  `${process.env.APP_URL || 'http://localhost:3000'}/api/auth/google/callback`
-);
+let oauth2ClientInstance: any = null;
+
+function getOAuth2Client() {
+  if (!oauth2ClientInstance) {
+    oauth2ClientInstance = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      `${process.env.APP_URL || 'http://localhost:3000'}/api/auth/google/callback`
+    );
+  }
+  return oauth2ClientInstance;
+}
 
 // Auth Routes
 app.get("/api/auth/google/url", (req, res) => {
-  const url = oauth2Client.generateAuthUrl({
+  const client = getOAuth2Client();
+  const url = client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/userinfo.email"],
     prompt: "consent"
@@ -748,7 +834,8 @@ app.get("/api/auth/google/url", (req, res) => {
 app.get("/api/auth/google/callback", async (req, res) => {
   const { code } = req.query;
   try {
-    const { tokens } = await oauth2Client.getToken(code as string);
+    const client = getOAuth2Client();
+    const { tokens } = await client.getToken(code as string);
     req.session!.tokens = tokens;
     
     res.send(`
@@ -788,9 +875,10 @@ app.post("/api/gmail/send", async (req, res) => {
   }
 
   const { to, subject, body } = req.body;
-  oauth2Client.setCredentials(req.session.tokens);
+  const client = getOAuth2Client();
+  client.setCredentials(req.session.tokens);
   
-  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+  const gmail = google.gmail({ version: "v1", auth: client });
   
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
   const messageParts = [

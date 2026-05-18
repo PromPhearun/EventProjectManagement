@@ -22,21 +22,55 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
   const [generatingDigest, setGeneratingDigest] = useState(false);
   const [digest, setDigest] = useState<string | null>(null);
   const [isDigestOpen, setIsDigestOpen] = useState(false);
-  const [clickUpUpdates, setClickUpUpdates] = useState<ClickUpUpdate[]>([]);
+  const [clickUpUpdates, setClickUpUpdates] = useState<ClickUpUpdate[]>(() => {
+    const saved = localStorage.getItem('epm_clickup_updates');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [isClickUpConfigured, setIsClickUpConfigured] = useState<boolean>(true);
   const [activeView, setActiveView] = useState<'projects' | 'tasks'>('projects');
   const [webhookUrl, setWebhookUrl] = useState<string | null>(null);
   const [isWebhookHelpOpen, setIsWebhookHelpOpen] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('epm_clickup_last_sync');
+    return saved ? new Date(saved) : null;
+  });
 
   const fetchClickUpData = useCallback(async () => {
+    if (document.visibilityState !== 'visible') return null;
+    
     try {
       const response = await fetch('/api/clickup/updates');
       if (response.ok) {
         const data = await response.json();
-        setClickUpUpdates(data);
-        return data;
+        
+        // Merge with existing updates, keep unique IDs, sort by timestamp
+        setClickUpUpdates(prev => {
+          const merged = [...data.updates];
+          const existingIds = new Set(merged.map(u => u.id));
+          
+          prev.forEach(u => {
+            if (!existingIds.has(u.id)) {
+              merged.push(u);
+            }
+          });
+          
+          const sorted = merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 50);
+          localStorage.setItem('epm_clickup_updates', JSON.stringify(sorted));
+          return sorted;
+        });
+        
+        setIsClickUpConfigured(data.isConfigured);
+        return data.updates;
       }
     } catch (error) {
-      console.error("Failed to fetch ClickUp updates:", error);
+      // Periodic failures are expected when serverless instances spin down
     }
     return null;
   }, []);
@@ -56,18 +90,78 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
   useEffect(() => {
     fetchClickUpData();
     fetchWebhookConfig();
-    const interval = setInterval(fetchClickUpData, 3000); // Polling every 3 seconds for "instant" feel
+    
+    const interval = setInterval(() => {
+      fetchClickUpData();
+    }, 5000); // Polling every 5 seconds
+    
     return () => clearInterval(interval);
   }, [fetchClickUpData, fetchWebhookConfig]);
 
   const handleSync = async () => {
     setSyncing(true);
-    const data = await fetchClickUpData();
-    setSyncing(false);
-    if (data && data.length > 0) {
-      toast.success(`Synced ${data.length} tasks from ClickUp Workspace: "Deriv Event Queue"`);
-    } else {
-      toast.info('No new tasks found in ClickUp Workspace.');
+    try {
+      // If API keys are not configured, just perform a local refresh of the webhook data
+      if (!isClickUpConfigured) {
+        const data = await fetchClickUpData();
+        if (data && data.length > 0) {
+          toast.success("Webhook feed refreshed successfully.");
+        } else {
+          toast.info("Refreshed. No new webhook events yet.");
+        }
+        return;
+      }
+
+      // Trigger a real sync from the ClickUp API
+      const syncResponse = await fetch('/api/clickup/sync', { method: 'POST' });
+      
+      if (!syncResponse.ok) {
+        const error = await syncResponse.json();
+        // If keys are missing despite isClickUpConfigured being true (edge case), handle it
+        if (syncResponse.status === 400) {
+          await fetchClickUpData();
+          toast.success("Webhook feed refreshed.");
+          return;
+        }
+        throw new Error(error.error || "Failed to trigger sync");
+      }
+
+      const syncResult = await syncResponse.json();
+      
+      if (syncResult.updates) {
+        setClickUpUpdates(prev => {
+          const merged = [...syncResult.updates];
+          const existingIds = new Set(merged.map(u => u.id));
+          prev.forEach(u => {
+            if (!existingIds.has(u.id)) merged.push(u);
+          });
+          const sorted = merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 50);
+          localStorage.setItem('epm_clickup_updates', JSON.stringify(sorted));
+          return sorted;
+        });
+        
+        const now = new Date();
+        setLastSynced(now);
+        localStorage.setItem('epm_clickup_last_sync', now.toISOString());
+      }
+      
+      if (syncResult.count > 0) {
+        toast.success(`Successfully pulled ${syncResult.count} live tasks from ClickUp.`);
+      } else {
+        toast.info('Sync complete. No tasks found in the linked ClickUp list.');
+      }
+    } catch (error: any) {
+      console.error("Sync error:", error);
+      toast.error(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">Manual Sync Failed</p>
+          <p className="text-[10px] opacity-80">{error.message}</p>
+          <p className="text-[10px] font-black uppercase text-amber-500 mt-1 cursor-pointer underline" onClick={() => setIsWebhookHelpOpen(true)}>Configure API Keys</p>
+        </div>,
+        { duration: 5000 }
+      );
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -144,9 +238,9 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
             <Sparkles size={14} className={generatingDigest ? "animate-pulse" : ""} />
             AI Daily Digest
           </Button>
-          <Button variant="outline" size="sm" className="gap-2 h-9 border-border text-foreground font-black uppercase text-[10px]" onClick={handleSync} disabled={syncing}>
+          <Button variant="outline" size="sm" className="gap-2 h-9 border-border text-foreground font-black uppercase text-[10px] hover:bg-muted" onClick={handleSync} disabled={syncing}>
             <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
-            Sync ClickUp
+            {syncing ? 'Syncing...' : 'Sync ClickUp (Live Pull)'}
           </Button>
         </div>
       </div>
@@ -158,11 +252,18 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
               <Activity className="text-[#7B68EE]" size={20} />
               External ClickUp Task Queue
             </h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="h-6 text-[8px] font-black uppercase border-[#7B68EE]/30 text-[#7B68EE] hover:bg-[#7B68EE]/10" onClick={() => setIsWebhookHelpOpen(true)}>
-                Webhook Config Help
-              </Button>
-              <Badge variant="outline" className="bg-[#7B68EE]/10 text-[#7B68EE] border-[#7B68EE]/30 animate-pulse">Live Synchronization Active</Badge>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-6 text-[8px] font-black uppercase border-[#7B68EE]/30 text-[#7B68EE] hover:bg-[#7B68EE]/10" onClick={() => setIsWebhookHelpOpen(true)}>
+                  Webhook Config Help
+                </Button>
+                <Badge variant="outline" className="bg-[#7B68EE]/10 text-[#7B68EE] border-[#7B68EE]/30 animate-pulse">Live Synchronization Active</Badge>
+              </div>
+              {lastSynced && (
+                <span className="text-[9px] font-bold text-muted-foreground italic">
+                  Last updated: {lastSynced.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              )}
             </div>
           </div>
 
@@ -329,7 +430,21 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
             </div>
             
             <div className="space-y-2 pt-2 border-t border-border">
-              <p className="text-xs font-black uppercase opacity-60">2. Why click "Test Webhook"?</p>
+              <p className="text-xs font-black uppercase opacity-60">2. Real-Time Pull (Live Refresh)</p>
+              <p className="text-[11px] text-foreground font-medium leading-relaxed">
+                To use the <span className="font-bold">Live Refresh</span> button without clicking "Test Webhook" in ClickUp, you must provide your ClickUp API credentials in the application settings:
+              </p>
+              <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-200 dark:border-amber-800/30 space-y-2 mt-1">
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">Required Environment Variables:</p>
+                <ul className="list-disc list-inside text-[9px] text-amber-600 dark:text-amber-500 font-mono space-y-1">
+                  <li>CLICKUP_API_KEY</li>
+                  <li>CLICKUP_LIST_ID</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="space-y-2 pt-2 border-t border-border">
+              <p className="text-xs font-black uppercase opacity-60">3. Why click "Test Webhook"?</p>
               <p className="text-[11px] text-foreground font-medium leading-relaxed">
                 ClickUp only sends automated events when tasks are modified in the ClickUp UI. "Test Webhook" is a manual trigger that helps verify the connection is active right now.
               </p>
