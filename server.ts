@@ -667,6 +667,7 @@ app.post("/api/webhook", async (req, res) => {
   
   const taskId = taskObject.id || payload.task_id || "UNKNOWN ID";
   const taskName = taskObject.name || payload.task_name || (payload.event ? `Task ${payload.event.replace(/([A-Z])/g, ' $1')}` : "Unknown ClickUp Task");
+  const taskUrl = taskObject.url || payload.task_url || `https://app.clickup.com/t/${taskId}`;
   
   const event = payload.event || "taskUpdated";
   
@@ -690,6 +691,7 @@ app.post("/api/webhook", async (req, res) => {
     id: Math.random().toString(36).substring(7),
     taskId,
     taskName,
+    taskUrl, // Added taskUrl
     event,
     assignees,
     creator,
@@ -738,9 +740,10 @@ app.post("/api/clickup/sync", async (req, res) => {
 
     // Map ClickUp tasks to our internal update format
     const newUpdates = tasks.map((task: any) => ({
-      id: `sync-${task.id}-${Date.now()}`,
+      id: `sync-${task.id}`, // Stable ID for sync tasks
       taskId: task.id,
       taskName: task.name,
+      taskUrl: task.url || `https://app.clickup.com/t/${task.id}`,
       event: "manualSync",
       assignees: task.assignees?.map((a: any) => a.username).join(', ') || 'No Assignee',
       creator: task.creator?.username || 'System',
@@ -748,20 +751,14 @@ app.post("/api/clickup/sync", async (req, res) => {
       timestamp: new Date().toISOString()
     }));
 
-    // For manual sync, we clear old updates or prepend them? 
-    // Usually, real tasks are more important than old webhook events.
-    // Let's prepend them and keep unique ones if possible, or just replace the top ones.
-    
-    // Simple approach: prepend and trim to MAX_UPDATES
+    // For manual sync, we replace existing sync entries for the same task
+    // or unshift if brand new.
     newUpdates.forEach((u: any) => {
-      // Check if we already have a recent sync for this task to avoid duplicates in the UI
-      const exists = clickupUpdates.some(existing => 
-        existing.taskId === u.taskId && 
-        (existing.event === 'manualSync' || existing.event === 'taskUpdated') &&
-        (new Date().getTime() - new Date(existing.timestamp).getTime() < 60000) // within 1 minute
-      );
-      
-      if (!exists) {
+      const existingIndex = clickupUpdates.findIndex(item => item.taskId === u.taskId);
+      if (existingIndex !== -1) {
+        // Replace existing entry if it's a sync or update it
+        clickupUpdates[existingIndex] = u;
+      } else {
         clickupUpdates.unshift(u);
       }
     });

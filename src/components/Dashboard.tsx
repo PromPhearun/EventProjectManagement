@@ -101,29 +101,25 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
   const handleSync = async () => {
     setSyncing(true);
     try {
-      // If API keys are not configured, just perform a local refresh of the webhook data
-      if (!isClickUpConfigured) {
-        const data = await fetchClickUpData();
-        if (data && data.length > 0) {
-          toast.success("Webhook feed refreshed successfully.");
-        } else {
-          toast.info("Refreshed. No new webhook events yet.");
-        }
-        return;
-      }
-
-      // Trigger a real sync from the ClickUp API
+      // Always try to trigger a real sync from the ClickUp API first
+      // The server will handle the case where keys are missing
       const syncResponse = await fetch('/api/clickup/sync', { method: 'POST' });
       
       if (!syncResponse.ok) {
-        const error = await syncResponse.json();
-        // If keys are missing despite isClickUpConfigured being true (edge case), handle it
+        const errorData = await syncResponse.json().catch(() => ({}));
+        
+        // If keys are missing (400), we fallback to just refreshing the webhook feed
         if (syncResponse.status === 400) {
-          await fetchClickUpData();
-          toast.success("Webhook feed refreshed.");
+          const data = await fetchClickUpData();
+          if (data && data.length > 0) {
+            toast.success("Webhook feed refreshed.");
+          } else {
+            toast.info("Refreshed. No new events yet. (API Keys not configured for Live Pull)");
+          }
           return;
         }
-        throw new Error(error.error || "Failed to trigger sync");
+        
+        throw new Error(errorData.error || "Failed to trigger sync");
       }
 
       const syncResult = await syncResponse.json();
@@ -282,30 +278,38 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {clickUpUpdates.map((update) => (
-                <Card key={update.id} className="border-2 border-[#7B68EE]/20 hover:border-[#7B68EE]/50 bg-background transition-all hover:shadow-lg rounded-3xl overflow-hidden group">
-                   <div className="p-4 flex flex-col gap-3">
-                      <div className="flex justify-between items-start">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#7B68EE] opacity-70 mb-1">ClickUp Task ID: {update.taskId}</span>
-                          <h4 className="text-lg font-black text-foreground group-hover:text-[#7B68EE] transition-colors">{update.taskName}</h4>
+                <a 
+                  key={update.id} 
+                  href={update.taskUrl || `https://app.clickup.com/t/${update.taskId}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block group no-underline"
+                >
+                  <Card className="border-2 border-[#7B68EE]/20 hover:border-[#7B68EE]/50 bg-background transition-all hover:shadow-lg rounded-3xl overflow-hidden h-full">
+                     <div className="p-4 flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#7B68EE] opacity-70 mb-1">ClickUp Task ID: {update.taskId}</span>
+                            <h4 className="text-lg font-black text-foreground group-hover:text-[#7B68EE] transition-colors">{update.taskName}</h4>
+                          </div>
+                          <Badge className="bg-[#7B68EE] text-white hover:bg-[#7B68EE] uppercase text-[8px] font-bold">
+                            {update.event.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                          </Badge>
                         </div>
-                        <Badge className="bg-[#7B68EE] text-white hover:bg-[#7B68EE] uppercase text-[8px] font-bold">
-                          {update.event.replace(/([A-Z])/g, ' $1').toLowerCase()}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground border-t border-[#7B68EE]/10 pt-3">
-                         <div className="flex items-center gap-1.5">
-                            <UserIcon size={12} className="text-[#7B68EE]" />
-                            <span>Assignee: <span className="text-foreground">{update.assignees || 'Unassigned'}</span></span>
-                         </div>
-                         <div className="flex items-center gap-1.5 shrink-0">
-                            <Clock size={12} className="text-[#7B68EE]" />
-                            <span>Received: <span className="text-foreground italic">{new Date(update.timestamp).toLocaleDateString()} {new Date(update.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></span>
-                         </div>
-                      </div>
-                   </div>
-                </Card>
+                        
+                        <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground border-t border-[#7B68EE]/10 pt-3">
+                           <div className="flex items-center gap-1.5">
+                              <UserIcon size={12} className="text-[#7B68EE]" />
+                              <span>Assignee: <span className="text-foreground">{update.assignees || 'Unassigned'}</span></span>
+                           </div>
+                           <div className="flex items-center gap-1.5 shrink-0">
+                              <Clock size={12} className="text-[#7B68EE]" />
+                              <span>Received: <span className="text-foreground italic">{new Date(update.timestamp).toLocaleDateString()} {new Date(update.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></span>
+                           </div>
+                        </div>
+                     </div>
+                  </Card>
+                </a>
               ))}
             </div>
           )}

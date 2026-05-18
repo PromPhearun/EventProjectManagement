@@ -2,6 +2,7 @@ export interface ClickUpUpdate {
   id: string;
   taskId: string;
   taskName: string;
+  taskUrl?: string;
   event: string;
   assignees?: string;
   creator?: string;
