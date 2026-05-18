@@ -656,25 +656,29 @@ app.post("/api/webhook", async (req, res) => {
   const payload = req.body;
   
   // Robust payload extraction to match ClickUp's actual structure
-  const taskData = payload.payload || payload;
-  const taskObject = taskData.task || taskData;
+  // Priority: 
+  // 1. payload.task (for real events)
+  // 2. payload.payload.task (for some versions)
+  // 3. payload.task_id (for test/simple events)
+  const taskObject = payload.task || payload.payload?.task || {};
+  const taskId = taskObject.id || payload.task_id || payload.payload?.task_id || "UNKNOWN ID";
   
-  console.log(`[${new Date().toISOString()}] ClickUp Webhook Received:`, {
-    event: payload.event,
-    taskId: taskObject.id || payload.task_id,
-    taskName: taskObject.name || payload.task_name
-  });
+  let taskName = taskObject.name || payload.task_name || payload.payload?.task_name;
+  if (!taskName) {
+    if (payload.event) {
+      taskName = `Task ${payload.event.replace(/([A-Z])/g, ' $1')}`;
+    } else {
+      taskName = "Unknown ClickUp Task";
+    }
+  }
   
-  const taskId = taskObject.id || payload.task_id || "UNKNOWN ID";
-  const taskName = taskObject.name || payload.task_name || (payload.event ? `Task ${payload.event.replace(/([A-Z])/g, ' $1')}` : "Unknown ClickUp Task");
-  const taskUrl = taskObject.url || payload.task_url || `https://app.clickup.com/t/${taskId}`;
-  
+  const taskUrl = taskObject.url || payload.task_url || payload.payload?.task_url || `https://app.clickup.com/t/${taskId}`;
   const event = payload.event || "taskUpdated";
   
   const extractUsername = (u: any) => u?.username || u?.user?.username || u?.display_name || "Unknown";
   
   let assignees = 'No Assignee';
-  const rawAssignees = taskObject.assignees || payload.assignees;
+  const rawAssignees = taskObject.assignees || payload.assignees || payload.payload?.assignees;
   
   if (Array.isArray(rawAssignees)) {
     if (rawAssignees.length > 0) {
@@ -684,18 +688,38 @@ app.post("/api/webhook", async (req, res) => {
     assignees = extractUsername(rawAssignees);
   }
     
-  const creatorUser = taskObject.creator || payload.creator || payload.user;
+  const creatorUser = taskObject.creator || payload.creator || payload.user || payload.payload?.creator;
   const creator = creatorUser ? extractUsername(creatorUser) : 'System';
+
+  // If we have an API key, we should try to fetch full task details for webhooks that lack them (like "Test Webhook")
+  let syncedTask = null;
+  const apiKey = process.env.CLICKUP_API_KEY;
+  if (apiKey && taskId !== "UNKNOWN ID" && (!taskObject.name || !taskObject.assignees)) {
+    try {
+      console.log(`[CLICKUP] Webhook received for ${taskId}, fetching full details...`);
+      const response = await fetch(`https://api.clickup.com/api/v2/task/${taskId}`, {
+        headers: { 'Authorization': apiKey }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        syncedTask = data;
+        taskName = data.name || taskName;
+        assignees = data.assignees?.map((a: any) => a.username).join(', ') || assignees;
+      }
+    } catch (e) {
+      console.error("Failed to fetch task details for webhook", e);
+    }
+  }
 
   const update = {
     id: Math.random().toString(36).substring(7),
     taskId,
     taskName,
-    taskUrl, // Added taskUrl
+    taskUrl,
     event,
     assignees,
     creator,
-    history: payload.history_items || [],
+    history: payload.history_items || payload.payload?.history_items || [],
     fullPayload: payload,
     timestamp: new Date().toISOString()
   };
@@ -744,23 +768,21 @@ app.post("/api/clickup/sync", async (req, res) => {
       taskId: task.id,
       taskName: task.name,
       taskUrl: task.url || `https://app.clickup.com/t/${task.id}`,
-      event: "manualSync",
+      event: "taskSynced",
       assignees: task.assignees?.map((a: any) => a.username).join(', ') || 'No Assignee',
       creator: task.creator?.username || 'System',
       history: [],
       timestamp: new Date().toISOString()
     }));
 
-    // For manual sync, we replace existing sync entries for the same task
-    // or unshift if brand new.
+    // For manual sync, we remove existing entries for the same task and unshift the new ones
+    // to the top, so they appear as "Live Pull" updates.
     newUpdates.forEach((u: any) => {
       const existingIndex = clickupUpdates.findIndex(item => item.taskId === u.taskId);
       if (existingIndex !== -1) {
-        // Replace existing entry if it's a sync or update it
-        clickupUpdates[existingIndex] = u;
-      } else {
-        clickupUpdates.unshift(u);
+        clickupUpdates.splice(existingIndex, 1);
       }
+      clickupUpdates.unshift(u);
     });
 
     if (clickupUpdates.length > MAX_UPDATES) {
