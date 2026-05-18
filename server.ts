@@ -657,18 +657,28 @@ app.post("/api/webhook", async (req, res) => {
   
   // Robust payload extraction to match ClickUp's actual structure
   const taskData = payload.payload || payload;
+  const taskObject = taskData.task || taskData;
   
-  const taskId = taskData.id || payload.task_id || "Unknown ID";
-  const taskName = taskData.name || "Unknown Task";
+  const taskId = taskObject.id || payload.task_id || "UNKNOWN ID";
+  const taskName = taskObject.name || payload.task_name || (payload.event ? `Task ${payload.event.replace(/([A-Z])/g, ' $1')}` : "Unknown ClickUp Task");
+  
   const event = payload.event || "taskUpdated";
   
-  const extractUsername = (u: any) => u?.username || u?.user?.username || "Unknown";
+  const extractUsername = (u: any) => u?.username || u?.user?.username || u?.display_name || "Unknown";
   
-  const assignees = Array.isArray(taskData.assignees) 
-    ? taskData.assignees.map(extractUsername).join(', ') 
-    : (taskData.assignees ? extractUsername(taskData.assignees) : 'No Assignee');
+  let assignees = 'No Assignee';
+  const rawAssignees = taskObject.assignees || payload.assignees;
+  
+  if (Array.isArray(rawAssignees)) {
+    if (rawAssignees.length > 0) {
+      assignees = rawAssignees.map(extractUsername).join(', ');
+    }
+  } else if (rawAssignees) {
+    assignees = extractUsername(rawAssignees);
+  }
     
-  const creator = extractUsername(taskData.creator);
+  const creatorUser = taskObject.creator || payload.creator || payload.user;
+  const creator = creatorUser ? extractUsername(creatorUser) : 'System';
 
   console.log(`Event: ${event}`);
   console.log(`Task ID: ${taskId}`);

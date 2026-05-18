@@ -178,9 +178,9 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
                             <UserIcon size={12} className="text-[#7B68EE]" />
                             <span>Assignee: <span className="text-foreground">{update.assignees || 'Unassigned'}</span></span>
                          </div>
-                         <div className="flex items-center gap-1.5">
+                         <div className="flex items-center gap-1.5 shrink-0">
                             <Clock size={12} className="text-[#7B68EE]" />
-                            <span>Received: <span className="text-foreground italic">{new Date(update.timestamp).toLocaleTimeString()}</span></span>
+                            <span>Received: <span className="text-foreground italic">{new Date(update.timestamp).toLocaleDateString()} {new Date(update.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></span>
                          </div>
                       </div>
                    </div>
