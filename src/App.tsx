@@ -15,7 +15,8 @@ import { FeedbackHub } from './components/FeedbackHub';
 import { HandoverHub } from './components/HandoverHub';
 import { KnowledgeHub } from './components/KnowledgeHub';
 import { LoginPage } from './components/LoginPage';
-import { User as UserIcon, LogOut, Settings, Bell, Palette, Globe, Check, Moon, Sun, Monitor } from 'lucide-react';
+import SvItineraryTab from './components/SvItineraryTab';
+import { User as UserIcon, LogOut, Settings, Bell, Palette, Globe, Check, Moon, Sun, Monitor, Clock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './components/ui/dialog';
 import { Switch } from './components/ui/switch';
@@ -171,6 +172,7 @@ export default function App() {
               { id: 'create', label: 'Event Planner', icon: Plus },
               { id: 'suppliers', label: 'Supplier Hub', icon: Users },
               { id: 'handover', label: 'Handover Hub', icon: ArrowRightLeft },
+              { id: 'itinerary', label: 'SV Itinerary', icon: Clock },
               { id: 'knowledge', label: 'Knowledge Base', icon: Lightbulb },
             ].map((item) => (
               <button
@@ -220,9 +222,10 @@ export default function App() {
                 {activeTab === 'feedback' && <EvaluationTab />}
                 {activeTab === 'handover' && <HandoverHub />}
                 {activeTab === 'chat' && <TeamChat />}
-                {activeTab === 'feedback-hub' && <FeedbackHub userRole={currentUser.role} />}
-                {activeTab === 'knowledge' && <KnowledgeHub />}
-             </div>
+                 {activeTab === 'feedback-hub' && <FeedbackHub userRole={currentUser.role} />}
+                 {activeTab === 'knowledge' && <KnowledgeHub />}
+                 {activeTab === 'itinerary' && <SvItineraryTab />}
+              </div>
           )}
         </main>
       </div>
@@ -357,13 +360,18 @@ export default function App() {
                       <Globe size={14} className="opacity-40" /> Focus Region
                     </label>
                     <Select 
-                      value={tempUser.settings?.primaryCountry} 
-                      onValueChange={(val) => setTempUser({
-                        ...tempUser,
-                        settings: tempUser.settings 
-                          ? { ...tempUser.settings, primaryCountry: val } 
-                          : { primaryCountry: val, notificationsEnabled: true, theme: 'modern' }
-                      })}
+                      value={tempUser.settings?.primaryCountry || undefined} 
+                      onValueChange={(val) => {
+                        if (!tempUser) return;
+                        setTempUser({
+                          ...tempUser,
+                          settings: {
+                            notificationsEnabled: tempUser.settings?.notificationsEnabled ?? true,
+                            theme: tempUser.settings?.theme ?? 'modern',
+                            primaryCountry: val === "All" ? undefined : val
+                          }
+                        });
+                      }}
                     >
                       <SelectTrigger className="rounded-xl border-2 border-border font-bold text-xs uppercase h-10 bg-background text-foreground">
                         <SelectValue placeholder="All Regions" />

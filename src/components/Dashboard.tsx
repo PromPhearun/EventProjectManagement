@@ -9,6 +9,7 @@ import { generateDailyEPMDigest } from "../services/gemini";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import Markdown from "react-markdown";
 import { ClickUpUpdate } from "../services/clickupService";
+import SvItineraryTab from "./SvItineraryTab";
 
 interface DashboardProps {
   projects: EventProject[];
@@ -34,7 +35,7 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
     return [];
   });
   const [isClickUpConfigured, setIsClickUpConfigured] = useState<boolean>(true);
-  const [activeView, setActiveView] = useState<'projects' | 'tasks'>('projects');
+  const [activeView, setActiveView] = useState<'projects' | 'tasks' | 'itinerary'>('projects');
   const [webhookUrl, setWebhookUrl] = useState<string | null>(null);
   const [isWebhookHelpOpen, setIsWebhookHelpOpen] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(() => {
@@ -214,6 +215,12 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
              >
                ClickUp Tasks {clickUpUpdates.length > 0 && <Badge className="ml-1 px-1 h-3 min-w-[12px] bg-amber-500 text-[8px]">{clickUpUpdates.length}</Badge>}
              </button>
+             <button 
+              onClick={() => setActiveView('itinerary')}
+              className={`px-4 py-1.5 text-[10px] font-black uppercase rounded transition-all ${activeView === 'itinerary' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent text-muted-foreground'}`}
+             >
+               SV Itinerary
+             </button>
           </div>
           
           <div className="bg-background border border-border rounded-lg p-1 flex gap-1 shadow-sm">
@@ -241,7 +248,9 @@ export function Dashboard({ projects, currentUser, onSelectProject }: DashboardP
         </div>
       </div>
 
-      {activeView === 'tasks' ? (
+      {activeView === 'itinerary' ? (
+        <SvItineraryTab />
+      ) : activeView === 'tasks' ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
