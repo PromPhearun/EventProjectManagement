@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { ArrowLeft, Download, Send, CheckCircle2, DollarSign, Clock, MapPin, Building, Star, AlertCircle, Plane, Hotel, Upload, Trash2, Plus, Globe, FileText, Mail, Sparkles } from "lucide-react";
+import { ArrowLeft, Download, Send, CheckCircle2, DollarSign, Clock, MapPin, Building, Star, AlertCircle, Plane, Hotel, Upload, Trash2, Plus, Globe, FileText, Mail, Sparkles, RefreshCcw } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { ApprovalTemplateTab } from "./ApprovalTemplateTab";
 import { ReconciliationTab } from "./ReconciliationTab";
@@ -28,6 +28,44 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
   const [isParsingInvoice, setIsParsingInvoice] = useState(false);
   const [isCheckingVariance, setIsCheckingVariance] = useState(false);
   const [budgetWarnings, setBudgetWarnings] = useState<string | null>(null);
+  const [importingItinerary, setImportingItinerary] = useState(false);
+
+  const handleImportItinerary = async () => {
+    setImportingItinerary(true);
+    try {
+      const resp = await fetch("/api/itinerary/fetch-external", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      if (!resp.ok) {
+        throw new Error("Failed to contact the remote SV server");
+      }
+      const data = await resp.json();
+      if (data.itinerary) {
+        onUpdate({ ...project, itinerary: data.itinerary });
+        
+        if (data.status === "fallback") {
+          toast.info(
+            <div className="flex flex-col gap-0.5">
+              <p className="font-bold">Dynamic Refresh (Fallback Active)</p>
+              <p className="text-[10px]">Successfully imported structured SV Itinerary from cached ledger.</p>
+            </div>
+          );
+        } else {
+          toast.success("SV Itinerary dynamically refreshed and parsed with Gemini!");
+        }
+      } else {
+        throw new Error("Invalid response format received");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Import failed: ${err.message || "Unknown error"}`);
+    } finally {
+      setImportingItinerary(false);
+    }
+  };
 
   const handleItineraryChange = (dayIdx: number, activityIdx: number, field: string, value: string) => {
     if (!project.itinerary) return;
@@ -206,6 +244,31 @@ export function EventDetails({ project, onBack, onUpdate }: EventDetailsProps) {
             </TabsList>
             
             <TabsContent value="itinerary" className="mt-6 space-y-6">
+              {/* Dynamic Integration Control panel */}
+              <Card className="border-2 border-dashed border-amber-500/30 bg-amber-500/5 rounded-3xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 bg-amber-500/15 text-amber-500 rounded-2xl shrink-0">
+                    <Sparkles size={20} className={importingItinerary ? "animate-pulse" : ""} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black uppercase text-foreground">Sveti Stefan (SV) Corporate Itinerary Sync</h3>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 max-w-xl">
+                      Connect directly to the Dev-Ops K8s Cluster (<code className="font-mono text-[9px] bg-muted px-1.5 py-0.5 rounded">qa39.k8s.deriv.dev/svetinerary</code>) to dynamically pull and structure the SV partner retreat itinerary on-demand.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-500/30 hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-black uppercase text-[10px] h-9 px-4 gap-2 shrink-0 rounded-xl bg-background"
+                  onClick={handleImportItinerary}
+                  disabled={importingItinerary}
+                >
+                  <RefreshCcw size={14} className={importingItinerary ? "animate-spin" : ""} />
+                  {importingItinerary ? "Syncing..." : "On-Demand Refresh"}
+                </Button>
+              </Card>
+
               {project.itinerary?.days.map((day, dIdx) => (
                 <Card key={day.dayNumber} className="border-border bg-card">
                   <CardHeader className="bg-muted/30 border-b border-border py-3 flex flex-row justify-between items-center">

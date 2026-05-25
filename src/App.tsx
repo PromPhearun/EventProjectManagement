@@ -132,7 +132,7 @@ export default function App() {
                         {currentUser.avatar ? (
                           <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
                         ) : (
-                          currentUser.name.split(' ').map(n => n[0]).join('')
+                          (currentUser.name || "User").split(' ').map(n => n[0]).join('')
                         )}
                     </div>
                   </div>
@@ -236,7 +236,7 @@ export default function App() {
                   {currentUser.avatar ? (
                     <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
                   ) : (
-                    currentUser.name.split(' ').map(n => n[0]).join('')
+                    (currentUser.name || "User").split(' ').map(n => n[0]).join('')
                   )}
                </div>
                <div>

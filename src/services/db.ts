@@ -128,14 +128,32 @@ const initialProjects: EventProject[] = [
   }
 ];
 
+function safeGetJson<T>(key: string, fallback: T): T {
+  try {
+    const data = localStorage.getItem(key);
+    if (!data || data === "undefined" || data === "null") {
+      return fallback;
+    }
+    return JSON.parse(data) as T;
+  } catch (error) {
+    console.warn(`[db-localstorage] Failed to parse key "${key}", falling back:`, error);
+    return fallback;
+  }
+}
+
 export const db = {
   getProjects: (): EventProject[] => {
-    const data = localStorage.getItem(PROJECTS_KEY);
-    if (!data) {
-      localStorage.setItem(PROJECTS_KEY, JSON.stringify(initialProjects));
+    try {
+      const data = localStorage.getItem(PROJECTS_KEY);
+      if (!data || data === "undefined" || data === "null") {
+        localStorage.setItem(PROJECTS_KEY, JSON.stringify(initialProjects));
+        return initialProjects;
+      }
+      return JSON.parse(data);
+    } catch (e) {
+      console.error("Failed to parse projects from localstorage", e);
       return initialProjects;
     }
-    return JSON.parse(data);
   },
   
   saveProject: (project: EventProject) => {
@@ -155,22 +173,25 @@ export const db = {
   },
   
   getSuppliers: (): Supplier[] => {
-    const data = localStorage.getItem(SUPPLIERS_KEY);
-    return data ? JSON.parse(data) : [];
+    return safeGetJson<Supplier[]>(SUPPLIERS_KEY, []);
   },
 
   getCountryBudgets: (): CountryBudget[] => {
-    const data = localStorage.getItem(COUNTRY_BUDGETS_KEY);
-    if (!data) {
-      localStorage.setItem(COUNTRY_BUDGETS_KEY, JSON.stringify(initialCountryBudgets));
+    try {
+      const data = localStorage.getItem(COUNTRY_BUDGETS_KEY);
+      if (!data || data === "undefined" || data === "null") {
+        localStorage.setItem(COUNTRY_BUDGETS_KEY, JSON.stringify(initialCountryBudgets));
+        return initialCountryBudgets;
+      }
+      return JSON.parse(data);
+    } catch (e) {
+      console.error("Failed to parse country budgets from localstorage", e);
       return initialCountryBudgets;
     }
-    return JSON.parse(data);
   },
 
   getBrainstormIdeas: (): BrainstormIdea[] => {
-    const data = localStorage.getItem(BRAINSTORM_KEY);
-    return data ? JSON.parse(data) : [];
+    return safeGetJson<BrainstormIdea[]>(BRAINSTORM_KEY, []);
   },
 
   saveIdea: (idea: BrainstormIdea) => {
@@ -180,8 +201,7 @@ export const db = {
   },
 
   getFeedback: (): TeamFeedback[] => {
-    const data = localStorage.getItem(FEEDBACK_KEY);
-    return data ? JSON.parse(data) : [];
+    return safeGetJson<TeamFeedback[]>(FEEDBACK_KEY, []);
   },
 
   saveFeedback: (f: TeamFeedback) => {
@@ -191,8 +211,7 @@ export const db = {
   },
 
   getChat: (): ChatMessage[] => {
-    const data = localStorage.getItem(CHAT_KEY);
-    return data ? JSON.parse(data) : [];
+    return safeGetJson<ChatMessage[]>(CHAT_KEY, []);
   },
 
   saveMessage: (msg: ChatMessage) => {
@@ -202,8 +221,7 @@ export const db = {
   },
 
   getActivityLogs: (): ActivityLog[] => {
-    const data = localStorage.getItem(LOGS_KEY);
-    return data ? JSON.parse(data) : [];
+    return safeGetJson<ActivityLog[]>(LOGS_KEY, []);
   },
 
   logActivity: (log: ActivityLog) => {
@@ -228,12 +246,17 @@ export const db = {
 
   // User Management
   getUsers: (): User[] => {
-    const data = localStorage.getItem(USERS_KEY);
-    if (!data) {
-      localStorage.setItem(USERS_KEY, JSON.stringify(initialUsers));
+    try {
+      const data = localStorage.getItem(USERS_KEY);
+      if (!data || data === "undefined" || data === "null") {
+        localStorage.setItem(USERS_KEY, JSON.stringify(initialUsers));
+        return initialUsers;
+      }
+      return JSON.parse(data);
+    } catch (e) {
+      console.error("Failed to parse users from localstorage", e);
       return initialUsers;
     }
-    return JSON.parse(data);
   },
 
   saveUser: (user: User) => {
@@ -248,8 +271,7 @@ export const db = {
   },
 
   getCurrentUser: (): User | null => {
-    const data = localStorage.getItem(CURRENT_USER_KEY);
-    return data ? JSON.parse(data) : null;
+    return safeGetJson<User | null>(CURRENT_USER_KEY, null);
   },
 
   setCurrentUser: (user: User) => {
@@ -307,8 +329,7 @@ export const db = {
   },
 
   getHandovers: (): HandoverRecord[] => {
-    const data = localStorage.getItem(HANDOVER_KEY);
-    return data ? JSON.parse(data) : [];
+    return safeGetJson<HandoverRecord[]>(HANDOVER_KEY, []);
   },
 
   createHandover: (handover: HandoverRecord) => {
